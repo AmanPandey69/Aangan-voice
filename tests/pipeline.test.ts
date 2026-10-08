@@ -271,3 +271,41 @@ describe("webhook route", () => {
     expect(r2.next_action).toBe("book");
   });
 });
+
+describe("Vaani format end to end", () => {
+  it("call_started stores the number; call_postprocessing is processed against it; test numbers skip CRM and email", async () => {
+    const { VaaniVoice } = await import("@/lib/adapters/voice/vaani");
+    const s = freshServices();
+    const vaani = new VaaniVoice(undefined, SECRET);
+    s.voice = vaani as unknown as typeof s.voice;
+    const send = (body: unknown) => {
+      const raw = JSON.stringify(body), ts = String(Math.floor(Date.now() / 1000));
+      return vaaniWebhook(new Request("http://x/api/vaani/webhook", { method: "POST", body: raw,
+        headers: { "x-vaani-timestamp": ts, "x-vaani-signature": `sha256=${hmacHex(SECRET, `${ts}.${raw}`)}` } }));
+    };
+    const fx = fixtures.T20;
+    const id = "inbound-77";
+    MockLLM.register(id, fx.facts);
+    expect((await send({ event: "call_started", room_name: id, status: "active", phone_number: fx.caller_phone })).status).toBe(200);
+    const transcript = fx.calls[0].turns.map((t) => `[09:15:00] ${t.speaker === "agent" ? "AGENT" : "USER"}: ${t.text}`).join("\n\n");
+    const res = await send({ event: "call_postprocessing", call_id: id, timestamp: "2026-09-25T03:50:00+00:00",
+      data: { call_id: id, room_name: id, call_duration: 284000, end_reason: "Call ended", transcript, dispositions: { qualification: "qualified" }, recording_url: "https://r/1" } });
+    expect((await res.json()).queued).toBe(true);
+    await settle();
+    const lead = (await s.repo.findLeadByPhone(fx.caller_phone))!;
+    expect(lead.verdict).toBe("qualified");
+    expect(lead.live_verdict).toBe("qualified");
+    expect(lead.verdict_mismatch).toBe(false);
+    expect(MockCRM.synced).toHaveLength(1);
+
+    // Same flow from a +910000 test number: processed, but nothing leaves the system.
+    MockCRM.synced = []; MockNotifier.outbox = [];
+    MockLLM.register("inbound-78", fx.facts);
+    await send({ event: "call_started", room_name: "inbound-78", phone_number: "+910000123456" });
+    await send({ event: "call_postprocessing", call_id: "inbound-78", timestamp: "2026-09-25T03:50:00+00:00", data: { call_id: "inbound-78", call_duration: 1000, transcript } });
+    await settle();
+    expect((await s.repo.findLeadByPhone("+910000123456"))!.verdict).toBe("qualified");
+    expect(MockCRM.synced).toHaveLength(0);
+    expect(MockNotifier.outbox).toHaveLength(0);
+  });
+});

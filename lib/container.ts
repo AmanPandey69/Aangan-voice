@@ -13,6 +13,10 @@ import { MockCRM } from "@/lib/adapters/crm/mock";
 import { MockNotifier } from "@/lib/adapters/notifier/mock";
 import { MockLLM } from "@/lib/adapters/llm/mock";
 import { AnthropicLLM } from "@/lib/adapters/llm/anthropic";
+import { VaaniVoice } from "@/lib/adapters/voice/vaani";
+import { CalcomCalendar } from "@/lib/adapters/calendar/calcom";
+import { HubSpotCRM } from "@/lib/adapters/crm/hubspot";
+import { ResendNotifier } from "@/lib/adapters/notifier/resend";
 
 export interface Services {
   repo: Repo;
@@ -34,14 +38,20 @@ export function buildServices(): Services {
     ? new SupabaseRepo(env.supabaseUrl()!, env.supabaseServiceRoleKey()!)
     : (g.__aanganMemoryRepo ??= new MemoryRepo());
 
-  const mockSecret = requireSecret(env.vaaniWebhookSecret(), "VAANI_WEBHOOK_SECRET");
+  const vaaniSecret = requireSecret(env.vaaniWebhookSecret(), "VAANI_WEBHOOK_SECRET");
+  const calSecret = requireSecret(env.calcomWebhookSecret(), "CALCOM_WEBHOOK_SECRET");
 
   return {
     repo,
-    voice: new MockVoice(mockSecret),
-    calendar: new MockCalendar(requireSecret(env.calcomWebhookSecret(), "CALCOM_WEBHOOK_SECRET")),
-    crm: new MockCRM(),
-    notifier: new MockNotifier(requireSecret(env.resendWebhookSecret(), "RESEND_WEBHOOK_SECRET")),
+    // Vaani is "real" once its webhook secret is set; the API key adds caller-number lookup.
+    voice: real(env.vaaniWebhookSecret()) ? new VaaniVoice(env.vaaniApiKey(), vaaniSecret) : new MockVoice(vaaniSecret),
+    calendar: real(env.calcomApiKey(), env.calcomEventTypeId(), env.calcomWebhookSecret())
+      ? new CalcomCalendar(env.calcomApiKey()!, env.calcomEventTypeId()!, calSecret)
+      : new MockCalendar(calSecret),
+    crm: real(env.hubspotToken()) ? new HubSpotCRM(env.hubspotToken()!, env.hubspotPortalId()) : new MockCRM(),
+    notifier: real(env.resendApiKey())
+      ? new ResendNotifier(env.resendApiKey()!, env.fromEmail(), env.resendWebhookSecret())
+      : new MockNotifier(requireSecret(env.resendWebhookSecret(), "RESEND_WEBHOOK_SECRET")),
     llm: real(env.llmApiKey()) ? new AnthropicLLM(env.llmApiKey()!) : new MockLLM(),
   };
 }

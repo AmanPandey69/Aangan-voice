@@ -1,6 +1,7 @@
 import type { Services } from "@/lib/container";
 import type { JobRow } from "@/lib/db/types";
 import { processCall } from "./process-call";
+import { isTestNumber } from "@/lib/phone";
 import { dashboardLeadUrl, notifyForLead, processAckReminders } from "./notify";
 
 /** Job kinds. Every side effect that can fail goes through here so it can be retried. */
@@ -16,7 +17,7 @@ export async function runJob(s: Services, job: JobRow): Promise<void> {
     }
     case "crm_sync": {
       const lead = await s.repo.getLead(String(job.payload.leadId));
-      if (!lead || !lead.verdict) return;
+      if (!lead || !lead.verdict || isTestNumber(lead.phone)) return;
       const r = await s.crm.syncLead(lead, dashboardLeadUrl(lead.id));
       await s.repo.updateLead(lead.id, { hubspot_contact_id: r.contactId, hubspot_deal_id: r.dealId ?? lead.hubspot_deal_id });
       return;
@@ -26,6 +27,8 @@ export async function runJob(s: Services, job: JobRow): Promise<void> {
       return;
     }
     case "notify": {
+      const lead = await s.repo.getLead(String(job.payload.leadId));
+      if (!lead || isTestNumber(lead.phone)) return;
       await notifyForLead(s, String(job.payload.leadId));
       return;
     }

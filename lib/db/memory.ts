@@ -88,6 +88,11 @@ export class MemoryRepo implements Repo {
     return row;
   }
   async listBookingsForLead(leadId: string) { return [...this.bookings.values()].filter((b) => b.lead_id === leadId); }
+  async findUnlinkedBookings(phone: string | null, email: string | null) {
+    return [...this.bookings.values()].filter((b) => !b.lead_id &&
+      ((phone && b.attendee_phone === phone) || (email && b.attendee_email?.toLowerCase() === email.toLowerCase())));
+  }
+  async linkBooking(id: string, leadId: string) { this.bookings.set(id, { ...this.must(this.bookings, id), lead_id: leadId }); }
 
   async insertNotification(n: NewNotification) {
     const row: NotificationRow = { ...n, id: randomUUID(), created_at: now() };

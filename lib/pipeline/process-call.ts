@@ -47,16 +47,18 @@ export async function findOrCreateLead(s: Services, phone: string): Promise<Lead
  * with the live verdict → dedupe by phone → save → queue CRM sync and the
  * handoff email.
  */
-export async function processCall(s: Services, call: NormalizedCall, webhookEventId: string | null): Promise<ProcessOutcome> {
+export async function processCall(s: Services, incoming: NormalizedCall, webhookEventId: string | null): Promise<ProcessOutcome> {
   const { repo } = s;
-  const prior = await repo.getCallByProviderId(call.providerCallId);
+  const prior = await repo.getCallByProviderId(incoming.providerCallId);
   if (prior?.processed_at) return { status: "duplicate", callId: prior.id };
+  let call: NormalizedCall = { ...incoming, callerPhone: incoming.callerPhone ?? prior?.caller_phone ?? null };
+  if (s.voice.enrich) call = await s.voice.enrich(call);
 
   const callRow = await repo.upsertCall({
     provider_call_id: call.providerCallId, lead_id: prior?.lead_id ?? null, channel: "phone",
     caller_phone: call.callerPhone, started_at: call.startedAt, ended_at: call.endedAt, duration_sec: call.durationSec,
     status: call.status, transcript: call.transcript || null, recording_url: call.recordingUrl,
-    live_verdict: prior?.live_verdict ?? null, ring_sec: call.ringSec, voice_cost_usd: call.costUsd ?? 0,
+    live_verdict: call.liveVerdict ?? prior?.live_verdict ?? null, ring_sec: call.ringSec, voice_cost_usd: call.costUsd ?? 0,
     llm_cost_usd: 0, llm_input_tokens: 0, llm_output_tokens: 0, extraction_status: "pending",
     webhook_event_id: webhookEventId, processed_at: null,
   });
@@ -97,6 +99,8 @@ export async function processCall(s: Services, call: NormalizedCall, webhookEven
   const liveVerdict = callRow.live_verdict;
   const verdictMismatch = Boolean(liveVerdict && liveVerdict !== ev.verdict);
 
+  // A booking made by the voice platform's own Cal.com integration may have arrived before this lead existed.
+  for (const b of await repo.findUnlinkedBookings(lead.phone, facts.email ?? lead.email)) await repo.linkBooking(b.id, lead.id);
   const bookings = await repo.listBookingsForLead(lead.id);
   const active = bookings.filter((b) => b.status !== "cancelled").sort((a, b) => b.start_at.localeCompare(a.start_at))[0];
   const bookingStatus: LeadRow["booking_status"] = active ? "booked"

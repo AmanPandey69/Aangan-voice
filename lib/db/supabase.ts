@@ -81,6 +81,12 @@ export class SupabaseRepo implements Repo {
     return this.one<BookingRow>(this.db.from("bookings").upsert(b, { onConflict: "provider_booking_id" }).select().single());
   }
   async listBookingsForLead(leadId: string) { return this.one<BookingRow[]>(this.db.from("bookings").select().eq("lead_id", leadId)); }
+  async findUnlinkedBookings(phone: string | null, email: string | null) {
+    const ors = [phone ? `attendee_phone.eq.${phone}` : null, email ? `attendee_email.ilike.${email.replace(/[%,()]/g, "")}` : null].filter(Boolean);
+    if (!ors.length) return [];
+    return this.one<BookingRow[]>(this.db.from("bookings").select().is("lead_id", null).or(ors.join(",")));
+  }
+  async linkBooking(id: string, leadId: string) { await this.one(this.db.from("bookings").update({ lead_id: leadId }).eq("id", id)); }
 
   async insertNotification(n: NewNotification) { return this.one<NotificationRow>(this.db.from("notifications").insert(n).select().single()); }
   async updateNotification(id: string, patch: Partial<NotificationRow>) {

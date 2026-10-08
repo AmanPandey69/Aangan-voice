@@ -29,6 +29,9 @@ export interface Repo {
 
   upsertBooking(b: Omit<BookingRow, "id" | "created_at">): Promise<BookingRow>;
   listBookingsForLead(leadId: string): Promise<BookingRow[]>;
+  /** Bookings not yet linked to a lead, matched by attendee phone or email. */
+  findUnlinkedBookings(phone: string | null, email: string | null): Promise<BookingRow[]>;
+  linkBooking(id: string, leadId: string): Promise<void>;
 
   insertNotification(n: NewNotification): Promise<NotificationRow>;
   updateNotification(id: string, patch: Partial<NotificationRow>): Promise<NotificationRow>;

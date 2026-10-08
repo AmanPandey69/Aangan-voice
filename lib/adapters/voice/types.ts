@@ -18,12 +18,18 @@ export interface NormalizedCall {
   ringSec: number | null;
   /** Provider-reported cost of the call in USD, if any. */
   costUsd: number | null;
+  /** Verdict the agent reached during the call, if the provider reports one. */
+  liveVerdict?: string | null;
 }
 
 export interface VoiceProvider {
   readonly name: string;
-  /** Verify the end-of-call webhook signature over the raw body. */
-  verifyWebhook(rawBody: string, headers: Headers): boolean;
+  /** Verify the webhook signature over the raw body (url: for providers that use a URL token). */
+  verifyWebhook(rawBody: string, headers: Headers, url?: string): boolean;
+  /** Early "call started" event carrying the caller's number, if the provider sends one. */
+  parseCallStart?(payload: unknown): { providerCallId: string; callerPhone: string | null } | null;
+  /** Fill in fields the end-of-call event lacks (caller number, cost) from the provider API. */
+  enrich?(call: NormalizedCall): Promise<NormalizedCall>;
   /** Returns null for events we don't process (e.g. call started). */
   parseWebhook(payload: unknown): NormalizedCall | null;
   /** Authenticate a mid-call tool request from the agent. */

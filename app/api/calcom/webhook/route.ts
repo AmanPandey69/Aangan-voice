@@ -26,6 +26,10 @@ export async function POST(req: Request) {
     let lead = ev.leadId ? await s.repo.getLead(ev.leadId) : null;
     const phone = normalisePhone(ev.attendeePhone);
     if (!lead && phone) lead = await s.repo.findLeadByPhone(phone);
+    if (!lead && ev.attendeeEmail) {
+      const email = ev.attendeeEmail.toLowerCase();
+      lead = (await s.repo.listLeads({ search: email, limit: 5 })).find((l) => l.email?.toLowerCase() === email) ?? null;
+    }
 
     if (ev.type === "booking_created" || ev.type === "booking_rescheduled") {
       await s.repo.upsertBooking({ lead_id: lead?.id ?? null, provider: s.calendar.name, provider_booking_id: ev.bookingId,
