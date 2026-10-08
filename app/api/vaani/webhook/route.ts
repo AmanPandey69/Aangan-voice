@@ -1,6 +1,6 @@
 import { after } from "next/server";
 import { services } from "@/lib/container";
-import { drainJobs } from "@/lib/pipeline/jobs";
+import { runMaintenance } from "@/lib/pipeline/jobs";
 import { json, logError, parseJson } from "@/lib/http/respond";
 
 export const runtime = "nodejs";
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
 
   await s.repo.enqueueJob("process_call", { webhookEventId: row.id });
   after(async () => {
-    try { await drainJobs(s); } catch (err) { logError("vaani.after", err, { event: row.id }); }
+    try { await runMaintenance(s); } catch (err) { logError("vaani.after", err, { event: row.id }); }
   });
   return json({ ok: true, queued: true });
 }

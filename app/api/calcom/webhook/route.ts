@@ -1,6 +1,6 @@
 import { after } from "next/server";
 import { services } from "@/lib/container";
-import { drainJobs } from "@/lib/pipeline/jobs";
+import { runMaintenance } from "@/lib/pipeline/jobs";
 import { json, logError, parseJson } from "@/lib/http/respond";
 import { normalisePhone } from "@/lib/phone";
 
@@ -54,6 +54,6 @@ export async function POST(req: Request) {
     await s.repo.markWebhookProcessed(row.id, err instanceof Error ? err.message : String(err));
     return json({ error: "processing failed" }, 500); // let Cal.com retry
   }
-  after(async () => { try { await drainJobs(s); } catch (err) { logError("calcom.after", err); } });
+  after(async () => { try { await runMaintenance(s); } catch (err) { logError("calcom.after", err); } });
   return json({ ok: true });
 }
