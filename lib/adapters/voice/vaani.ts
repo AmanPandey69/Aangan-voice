@@ -19,6 +19,7 @@ const REPLAY_WINDOW_SEC = 300;
 
 interface VaaniEvent {
   event?: string;
+  /** call_started / call_ended carry their fields here in real deliveries (the docs show them flat). */
   call_id?: string;
   room_name?: string;
   timestamp?: string;
@@ -27,6 +28,7 @@ interface VaaniEvent {
   end_reason?: string;
   data?: {
     room_name?: string;
+    phone_number?: string;
     call_id?: string;
     call_duration?: number; // milliseconds in call_postprocessing
     end_reason?: string;
@@ -60,8 +62,12 @@ export class VaaniVoice implements VoiceProvider {
 
   parseCallStart(payload: unknown): { providerCallId: string; callerPhone: string | null } | null {
     const p = payload as VaaniEvent;
-    if (p?.event !== "call_started" || !p.room_name) return null;
-    return { providerCallId: p.room_name, callerPhone: p.phone_number ?? null };
+    if (p?.event !== "call_started") return null;
+    // Real deliveries nest fields under `data` (seen in Vaani's webhook test, 2026-10-08); the docs show them flat.
+    const d = { ...p, ...(p.data ?? {}) } as VaaniEvent["data"] & VaaniEvent;
+    const id = d.room_name ?? d.call_id;
+    if (!id) return null;
+    return { providerCallId: id, callerPhone: d.phone_number ?? null };
   }
 
   parseWebhook(payload: unknown): NormalizedCall | null {
@@ -69,7 +75,10 @@ export class VaaniVoice implements VoiceProvider {
     if (p?.event !== "call_postprocessing" || !p.data) return null;
     const id = p.data.call_id ?? p.call_id ?? p.data.room_name;
     if (!id) return null;
-    const durationSec = Math.round((p.data.call_duration ?? 0) / 1000);
+    // Docs: milliseconds in call_postprocessing; Vaani's own test sends seconds. A value above
+    // 10,000 can only be milliseconds for a phone call, so treat smaller values as seconds.
+    const rawDuration = p.data.call_duration ?? 0;
+    const durationSec = Math.round(rawDuration > 10_000 ? rawDuration / 1000 : rawDuration);
     const transcript = normaliseTranscript(p.data.transcript ?? "");
     const endedAt = p.timestamp ?? null;
     return {

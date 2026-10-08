@@ -163,3 +163,25 @@ describe("phone helpers", () => {
   it.each([["98000 00001", "+919800000001"], ["09800000001", "+919800000001"], ["919800000001", "+919800000001"], ["+91 98000-00001", "+919800000001"]])("%s → %s", (a, b) => expect(normalisePhone(a)).toBe(b));
   it("recognises smoke-test numbers", () => { expect(isTestNumber("+910000012345")).toBe(true); expect(isTestNumber("+919800000001")).toBe(false); });
 });
+
+describe("Vaani real payload (captured from Vaani's webhook test, 2026-10-08)", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const sample = JSON.parse(require("node:fs").readFileSync("fixtures/vaani/webhook-test-2026-10-08.json", "utf8")) as { events: { event: string }[] };
+  const ev = (name: string) => sample.events.find((e) => e.event === name)!;
+  const v = new VaaniVoice(undefined, "s");
+
+  it("reads the caller number from nested call_started data", () =>
+    expect(v.parseCallStart(ev("call_started"))).toEqual({ providerCallId: "test_room_123", callerPhone: "+919876543210" }));
+  it("still reads the documented flat shape", () =>
+    expect(v.parseCallStart({ event: "call_started", room_name: "r", phone_number: "+91" })).toEqual({ providerCallId: "r", callerPhone: "+91" }));
+  it("parses the real call_postprocessing shape", () => {
+    const c = v.parseWebhook(ev("call_postprocessing"))!;
+    expect(c).toMatchObject({ providerCallId: "test_room_123", durationSec: 120, transcript: "Agent: Hello\nCaller: Hi", recordingUrl: "https://example.com/recording.mp3" });
+  });
+  it("treats millisecond durations as milliseconds", () =>
+    expect(v.parseWebhook({ event: "call_postprocessing", call_id: "x", data: { call_id: "x", call_duration: 245000, transcript: "USER: hi there" } })!.durationSec).toBe(245));
+  it("ignores the test envelope itself", () => {
+    expect(v.parseWebhook(sample)).toBeNull();
+    expect(v.parseCallStart(sample)).toBeNull();
+  });
+});

@@ -1,0 +1,50 @@
+{
+  "event": "webhook_test",
+  "events": [
+    {
+      "data": {
+        "call_id": "test_room_123",
+        "call_type": "Outbound",
+        "room_name": "test_room_123",
+        "agent_name": "TestAgent",
+        "phone_number": "+919876543210"
+      },
+      "event": "call_started",
+      "timestamp": "2026-10-08T14:28:34.879263+00:00"
+    },
+    {
+      "data": {
+        "call_id": "test_room_123",
+        "room_name": "test_room_123",
+        "end_reason": "completed",
+        "call_duration": 120,
+        "technical_issue": false
+      },
+      "event": "call_ended",
+      "timestamp": "2026-10-08T14:28:34.879286+00:00"
+    },
+    {
+      "data": {
+        "call_id": "test_room_123",
+        "summary": "This is a sample summary for testing.",
+        "entities": {
+          "intent": "inquiry",
+          "customer_name": "John Doe"
+        },
+        "room_name": "test_room_123",
+        "end_reason": "completed",
+        "transcript": "Agent: Hello\nUser: Hi",
+        "dispositions": {
+          "CATALOG ID": "44",
+          "call_disposition": "Interested"
+        },
+        "call_duration": 120,
+        "recording_url": "https://example.com/recording.mp3"
+      },
+      "event": "call_postprocessing",
+      "call_id": "test_room_123",
+      "timestamp": "2026-10-08T14:28:34.879296+00:00"
+    }
+  ],
+  "timestamp": "2026-10-08T14:28:34.879302+00:00"
+}
