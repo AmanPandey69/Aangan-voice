@@ -27,7 +27,8 @@ export function heuristicExtract(input: ExtractionInput): LeadFacts {
   const callerText = input.transcript.split("\n").filter((l) => /^caller:/i.test(l)).join(" ");
   const t = callerText.toLowerCase();
   const allPlaces = [...OUT_OF_AREA, ...PCMC, ...PUNE_CITY, ...Object.keys(ALIASES)];
-  const locality = allPlaces.find((p) => ` ${t.replace(/[^a-z ]/g, " ")} `.includes(` ${p} `)) ?? null;
+  const found = allPlaces.find((p) => ` ${t.replace(/[^a-z ]/g, " ")} `.includes(` ${p} `));
+  const locality = found ? found.replace(/\b\w/g, (c) => c.toUpperCase()) : null;
   const sqft = t.match(/(\d[\d,]*)\s*(sq\.?\s*ft|square feet)/);
   const bhk = t.match(/(\d)\s*bhk/);
   const commercial = has(t, /\b(office|clinic|coworking|startup|workstations)\b/);
