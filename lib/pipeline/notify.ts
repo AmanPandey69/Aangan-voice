@@ -6,6 +6,7 @@ import { makeAckToken } from "@/lib/handoff/ack-token";
 import { buildHandoffEmail, type HandoffEmailInput, type HandoffVariant, type RenderedEmail } from "@/lib/handoff/email";
 import { PriceLeakError } from "@/lib/guard/price-guard";
 import { logError } from "@/lib/http/respond";
+import { isEmailTestNumber } from "@/lib/phone";
 import { routeLead } from "@/lib/handoff/routing";
 
 const KIND: Record<HandoffVariant, NotificationKind> = {
@@ -98,11 +99,14 @@ export async function processAckReminders(s: Services, now = new Date(), rules: 
 
 /** Full email, or the minimal version if the full one trips the price guard. Throws only if both do. */
 function render(input: HandoffEmailInput): RenderedEmail {
+  let email: RenderedEmail;
   try {
-    return buildHandoffEmail(input);
+    email = buildHandoffEmail(input);
   } catch (err) {
     if (!(err instanceof PriceLeakError)) throw err;
     logError("email.price_guard_fallback", err, { lead: input.lead.id });
-    return buildHandoffEmail({ ...input, minimal: true });
+    email = buildHandoffEmail({ ...input, minimal: true });
   }
+  // Smoke-test emails are clearly marked so nobody acts on them.
+  return isEmailTestNumber(input.lead.phone) ? { ...email, subject: `[TEST] ${email.subject}` } : email;
 }

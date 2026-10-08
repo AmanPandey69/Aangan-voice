@@ -151,6 +151,8 @@ BASE_URL=https://<your-app>.vercel.app SMOKE_SECRET=<VAANI_WEBHOOK_SECRET> npm r
 
 It checks health and auth, calls the evaluate and availability tools, and sends a signed `call_started` and end-of-call webhook (in Vaani's format when Vaani is live), then checks that a redelivery is deduplicated. The caller number is `+910000…`, which the app treats as a test number: it is processed and shown on the dashboard, but **never sent to HubSpot or emailed**. It does not create a real Cal.com booking unless you set `SMOKE_BOOK=1`.
 
+To check real email delivery, add `--with-email` (or `npm run smoke:email`): the caller number becomes `+910001…`, and the handoff email **is** sent to `DESIGNER_EMAIL` with `[TEST]` at the start of the subject. HubSpot is still skipped.
+
 ## Known gaps (marked `TODO(vendor)` in code)
 
 - **Vaani:** custom functions are not publicly documented. Booking uses Vaani's Cal.com integration, and the live verdict comes from the `qualification` disposition. It's also unconfirmed whether dashboard webhooks are signed like campaign webhooks (the URL-token fallback covers this). The timezone of call-history timestamps and per-credit pricing (`VAANI_USD_PER_CREDIT`) are unconfirmed, as is Marathi support.

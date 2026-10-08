@@ -10,11 +10,17 @@ export function normalisePhone(raw: string | null | undefined): string | null {
 }
 
 /**
- * Numbers starting +910000 are not valid Indian mobiles; the smoke test uses
- * them so a test call against production never reaches HubSpot or the designer.
+ * Numbers starting +91000 are not valid Indian mobiles; the smoke test uses them.
+ *  +910000xxxxxx: silent test. Never reaches HubSpot or email.
+ *  +910001xxxxxx: email test (`npm run smoke -- --with-email`). Emails are sent with a
+ *                 "[TEST]" subject so delivery can be checked; HubSpot is still skipped.
  */
 export function isTestNumber(phone: string | null | undefined): boolean {
-  return Boolean(phone && /^\+910000\d{6}$/.test(phone));
+  return Boolean(phone && /^\+91000[01]\d{6}$/.test(phone));
+}
+
+export function isEmailTestNumber(phone: string | null | undefined): boolean {
+  return Boolean(phone && /^\+910001\d{6}$/.test(phone));
 }
 
 /** Online (browser) calls have no caller number; the lead is keyed by the call id instead. */

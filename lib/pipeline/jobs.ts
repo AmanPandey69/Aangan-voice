@@ -1,7 +1,7 @@
 import type { Services } from "@/lib/container";
 import type { JobRow } from "@/lib/db/types";
 import { processCall } from "./process-call";
-import { isTestNumber } from "@/lib/phone";
+import { isEmailTestNumber, isTestNumber } from "@/lib/phone";
 import { dashboardLeadUrl, notifyForLead, processAckReminders } from "./notify";
 
 /** Job kinds. Every side effect that can fail goes through here so it can be retried. */
@@ -28,7 +28,7 @@ export async function runJob(s: Services, job: JobRow): Promise<void> {
     }
     case "notify": {
       const lead = await s.repo.getLead(String(job.payload.leadId));
-      if (!lead || isTestNumber(lead.phone)) return;
+      if (!lead || (isTestNumber(lead.phone) && !isEmailTestNumber(lead.phone))) return;
       await notifyForLead(s, String(job.payload.leadId));
       return;
     }

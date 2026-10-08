@@ -13,7 +13,8 @@
     "replay:live": "tsx scripts/replay-live.ts",
     "smoke": "tsx scripts/smoke-test.ts",
     "vercel-build": "vitest run && next build",
-    "db:migrate": "tsx scripts/db-migrate.ts"
+    "db:migrate": "tsx scripts/db-migrate.ts",
+    "smoke:email": "tsx scripts/smoke-test.ts --with-email"
   },
   "engines": {
     "node": ">=20"

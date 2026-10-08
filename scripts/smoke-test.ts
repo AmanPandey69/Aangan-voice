@@ -9,6 +9,8 @@
  * end-of-call webhook → duplicate redelivery.
  * The caller number is +910000xxxxxx, which the app treats as a test call:
  * no HubSpot sync and no designer email, even in production.
+ * With --with-email it uses +910001xxxxxx instead: the handoff email IS sent to
+ * DESIGNER_EMAIL with "[TEST]" at the start of the subject (HubSpot still skipped).
  * Exits non-zero on any failure.
  * Pass --seed to send several fixture calls instead (local dashboard demo).
  */
@@ -46,7 +48,9 @@ async function smoke() {
   voiceMode = health.adapters.voice;
 
   const callId = `smoke-${Date.now()}`;
-  const phone = `+910000${String(Date.now()).slice(-6)}`; // test number: never synced or emailed
+  const withEmail = process.argv.includes("--with-email");
+  // +910000…: never synced or emailed. +910001…: emailed with a [TEST] subject, never synced.
+  const phone = `+91000${withEmail ? 1 : 0}${String(Date.now()).slice(-6)}`;
 
   const unauth = await post("/api/tools/evaluate", {}, {});
   check(unauth.status === 401, "tool endpoint rejects unauthenticated requests");
@@ -87,6 +91,7 @@ async function smoke() {
   const dup = await webhook(payload);
   check(dup.json.duplicate === true, "redelivery deduplicated");
   console.log(`\nSmoke test passed. In a few seconds, open ${BASE}/calls and search for ${phone}.`);
+  if (withEmail) console.log(`A "[TEST] …" handoff email should reach DESIGNER_EMAIL within a minute or two.`);
 }
 
 async function seed() {

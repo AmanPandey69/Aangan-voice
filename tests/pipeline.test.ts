@@ -327,3 +327,17 @@ describe("online call (no caller ID)", () => {
     expect(MockNotifier.outbox[0].text).toContain("Phone: +919811112222");
   });
 });
+
+describe("smoke-test numbers", () => {
+  it("+910001 numbers send a [TEST] email but never reach HubSpot; +910000 send nothing", async () => {
+    const s = freshServices();
+    const fx = fixtures.T01;
+    for (const [phone, id] of [["+910001123456", "em-1"], ["+910000123456", "si-1"]] as const) {
+      MockLLM.register(id, fx.facts);
+      await processCall(s, s.voice.parseWebhook({ event_id: `e-${id}`, event: "call.ended", call: { providerCallId: id, callerPhone: phone, startedAt: fx.calls[0].started_at, durationSec: 200, status: "completed", turns: fx.calls[0].turns } })!, null);
+    }
+    await drainJobs(s);
+    expect(MockNotifier.outbox.map((e) => e.subject)).toEqual(["[TEST] URGENT · Needs manual booking: Priya, Kothrud, Dahanukar Colony, 3BHK apartment"]);
+    expect(MockCRM.synced).toHaveLength(0);
+  });
+});
