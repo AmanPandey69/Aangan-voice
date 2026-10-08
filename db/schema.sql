@@ -1,10 +1,9 @@
--- Aangan Studio call automation — initial schema.
--- Run in the Supabase SQL editor, or `supabase db push`.
--- RLS is enabled on every table with NO policies: only the service role
--- (used server-side by the Vercel app) can read or write. The anon key
--- cannot read anything. No pricing data is ever stored here.
+-- Aangan Studio call automation — schema for Neon Postgres.
+-- Run once in the Neon SQL editor, or: psql "$DATABASE_URL" -f db/schema.sql
+-- Safe to re-run (everything is "if not exists" / "or replace").
+-- Only the Vercel app connects (server-side, via DATABASE_URL).
+-- No pricing data is ever stored here.
 
-create extension if not exists pgcrypto;
 
 create table if not exists leads (
   id uuid primary key default gen_random_uuid(),
@@ -157,10 +156,3 @@ returns setof jobs language sql as $$
   returning *;
 $$;
 
-alter table leads enable row level security;
-alter table webhook_events enable row level security;
-alter table calls enable row level security;
-alter table bookings enable row level security;
-alter table notifications enable row level security;
-alter table jobs enable row level security;
-alter table dead_letters enable row level security;

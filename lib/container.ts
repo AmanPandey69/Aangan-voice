@@ -1,7 +1,7 @@
 import { env, requireSecret } from "@/lib/env";
 import type { Repo } from "@/lib/db/repo";
 import { MemoryRepo } from "@/lib/db/memory";
-import { SupabaseRepo } from "@/lib/db/supabase";
+import { NeonRepo } from "@/lib/db/neon";
 import type { VoiceProvider } from "@/lib/adapters/voice/types";
 import type { CalendarProvider } from "@/lib/adapters/calendar/types";
 import type { CRMProvider } from "@/lib/adapters/crm/types";
@@ -34,8 +34,8 @@ export function buildServices(): Services {
   const mock = env.mockAll;
   const real = (...keys: (string | undefined)[]) => !mock && keys.every(Boolean);
 
-  const repo: Repo = real(env.supabaseUrl(), env.supabaseServiceRoleKey())
-    ? new SupabaseRepo(env.supabaseUrl()!, env.supabaseServiceRoleKey()!)
+  const repo: Repo = real(env.databaseUrl())
+    ? new NeonRepo(env.databaseUrl()!)
     : (g.__aanganMemoryRepo ??= new MemoryRepo());
 
   const vaaniSecret = requireSecret(env.vaaniWebhookSecret(), "VAANI_WEBHOOK_SECRET");

@@ -1,13 +1,13 @@
 # Aangan Studio — call automation
 
-Phone enquiries to Aangan Studio (interior design, Pune) are answered by a Vaani voice agent that qualifies the caller and books a consultation. This app receives the call, decides the verdict with deterministic rules, stores the lead, syncs HubSpot, emails the designer a handoff once a booking exists, and shows everything on a password-protected dashboard.
+Phone enquiries to Aangan Studio (interior design, Pune) are answered by a Vaani voice agent that qualifies the caller and books a consultation. This app receives the call, decides the verdict with deterministic rules, stores the lead in Neon Postgres, syncs HubSpot, emails the designer a handoff once a booking exists, and shows everything on a password-protected dashboard.
 
 ```
 Caller ─► Vaani agent ──(Cal.com booking during the call)──► Cal.com
               │                                               │ BOOKING_CREATED
               │ call_started / call_postprocessing            ▼
               ▼                                      /api/calcom/webhook
-      /api/vaani/webhook ─► queue ─► extract (Claude) ─► rules engine ─► Supabase
+      /api/vaani/webhook ─► queue ─► extract (Claude) ─► rules engine ─► Neon
                                                     │                  │
                                                     ├─► HubSpot        └─► dashboard
                                                     └─► handoff email (Resend) ─► designer ─► /api/ack
@@ -82,7 +82,7 @@ The source docs conflict in places. Each conflict is a flag, so changing your mi
 | Service | What to create | Env vars |
 |---|---|---|
 | Vercel (Hobby) | A project linked to the GitHub repo | none |
-| Supabase | A project. Run `supabase/migrations/0001_init.sql` in the SQL editor. | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (`SUPABASE_ANON_KEY` is not needed) |
+| Neon | A project (region: AWS Asia Pacific, Singapore or Mumbai if offered). Run `db/schema.sql` in the Neon SQL editor. | `DATABASE_URL` (the **pooled** connection string) |
 | Anthropic | An API key | `LLM_API_KEY` |
 | Vaani (app.vaanivoice.ai) | The agent, an inbound number, a webhook and an API key | `VAANI_API_KEY`, `VAANI_WEBHOOK_SECRET` |
 | Cal.com | A "Design consultation" event type, an API key and a webhook | `CALCOM_API_KEY`, `CALCOM_EVENT_TYPE_ID`, `CALCOM_WEBHOOK_SECRET` |

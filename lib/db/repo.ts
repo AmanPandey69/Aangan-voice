@@ -5,10 +5,10 @@ import type {
 
 /**
  * Storage interface. `MemoryRepo` backs mock mode and tests;
- * `SupabaseRepo` backs production. Pipeline code depends only on this.
+ * `NeonRepo` backs production. Pipeline code depends only on this.
  */
 export interface Repo {
-  readonly kind: "memory" | "supabase";
+  readonly kind: "memory" | "neon";
 
   saveWebhookEvent(e: Omit<WebhookEventRow, "id" | "received_at" | "processed_at" | "error">): Promise<{ row: WebhookEventRow; duplicate: boolean }>;
   markWebhookProcessed(id: string, error?: string | null): Promise<void>;
