@@ -50,14 +50,12 @@ export class VaaniVoice implements VoiceProvider {
    * Until then a `?token=<VAANI_WEBHOOK_SECRET>` on the webhook URL is also accepted.
    */
   verifyWebhook(rawBody: string, headers: Headers, url?: string): boolean {
+    // The URL token is as secret as the signing key, so either one is enough.
+    if (url && safeEqual(new URL(url).searchParams.get("token"), this.secret)) return true;
     const sig = headers.get("x-vaani-signature");
     const ts = headers.get("x-vaani-timestamp");
-    if (sig && ts) {
-      if (!/^\d+$/.test(ts) || Math.abs(Date.now() / 1000 - Number(ts)) > REPLAY_WINDOW_SEC) return false;
-      return safeEqual(sig, `sha256=${hmacHex(this.secret, `${ts}.${rawBody}`)}`);
-    }
-    if (url) return safeEqual(new URL(url).searchParams.get("token"), this.secret);
-    return false;
+    if (!sig || !ts || !/^\d+$/.test(ts) || Math.abs(Date.now() / 1000 - Number(ts)) > REPLAY_WINDOW_SEC) return false;
+    return safeEqual(sig, `sha256=${hmacHex(this.secret, `${ts}.${rawBody}`)}`);
   }
 
   parseCallStart(payload: unknown): { providerCallId: string; callerPhone: string | null } | null {
