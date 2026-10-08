@@ -29,6 +29,11 @@ const RULES: { rule: string; re: RegExp }[] = [
 
 export function findPriceLeaks(text: string | null | undefined): PriceLeak[] {
   if (!text) return [];
+  // URLs (ack tokens, dashboard links) are opaque and never carry prices;
+  // random base64 can otherwise look like "5k" or "12-34".
+  text = text.replace(/https?:\/\/[^\s"'<>]+/g, " ");
+  // Only visible text matters: drop CSS and tags (as line breaks, so table cells stay separate).
+  text = text.replace(/<style[\s\S]*?<\/style>/gi, "\n").replace(/<[^>]+>/g, "\n");
   const out: PriceLeak[] = [];
   for (const { rule, re } of RULES) {
     for (const m of text.matchAll(re)) out.push({ rule, match: m[0].trim() });

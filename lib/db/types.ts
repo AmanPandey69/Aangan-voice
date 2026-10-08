@@ -1,7 +1,7 @@
 import type { CriterionKey, CriterionResult, Flag, LeadFacts, Verdict } from "@/lib/domain/lead";
 
 export type BookingStatus = "none" | "booked" | "needs_manual_booking" | "not_offered" | "cancelled";
-export type CallStatus = "completed" | "dropped" | "missed" | "failed";
+export type CallStatus = "in_progress" | "completed" | "dropped" | "missed" | "failed";
 export type NotificationKind = "handoff" | "urgent" | "manual_booking" | "reminder";
 export type NotificationStatus = "queued" | "sent" | "delivered" | "delayed" | "bounced" | "complained" | "failed" | "blocked";
 export type ReviewReason =
@@ -93,6 +93,9 @@ export interface NotificationRow {
   id: string;
   lead_id: string | null;
   kind: NotificationKind;
+  variant: string;
+  /** One email per (lead, variant, booking) — prevents duplicate handoffs. */
+  dedupe_key: string;
   recipient: string;
   cc: string | null;
   subject: string;
