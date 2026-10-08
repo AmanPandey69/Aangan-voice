@@ -86,7 +86,7 @@ The source docs conflict in places. Each conflict is a flag, so changing your mi
 | Google Gemini | An API key from Google AI Studio (Claude also supported with `LLM_PROVIDER=anthropic`) | `LLM_API_KEY` |
 | Vaani (app.vaanivoice.ai) | The agent, an inbound number, a webhook and an API key | `VAANI_API_KEY`, `VAANI_WEBHOOK_SECRET` |
 | Cal.com | A "Design consultation" event type, an API key and a webhook | `CALCOM_API_KEY`, `CALCOM_EVENT_TYPE_ID`, `CALCOM_WEBHOOK_SECRET` |
-| HubSpot | A legacy private app with `crm.objects.contacts.read/write` and `crm.objects.deals.read/write` | `HUBSPOT_TOKEN`, optional `HUBSPOT_PORTAL_ID` |
+| HubSpot | A **service key** (Development → Keys → Service keys; legacy private apps also work) with `crm.objects.contacts.read/write` and `crm.objects.deals.read/write` | `HUBSPOT_TOKEN`, optional `HUBSPOT_PORTAL_ID` |
 | Resend | An API key, a **verified sending domain** and a webhook | `RESEND_API_KEY`, `FROM_EMAIL`, `RESEND_WEBHOOK_SECRET` |
 | You | Recipients and secrets | `DESIGNER_EMAIL`, `FRONT_DESK_EMAIL`, `DASHBOARD_PASSWORD`, `ACK_TOKEN_SECRET`, `CRON_SECRET`, `APP_BASE_URL` |
 
@@ -119,7 +119,7 @@ Each integration switches from mock to real once its keys are set. `MOCK_MODE=tr
 - The free tier allows 100 emails a day. Each CC'd recipient counts.
 
 ### HubSpot
-- Create a legacy private app (Development → Legacy apps) with the four scopes above.
+- Create a service key (Development → Keys → Service keys → Create service key) with the four scopes above. New accounts can't create legacy private apps; older ones can use either.
 - Qualified leads become a contact plus a deal in the default pipeline at `appointmentscheduled`. Declined leads become a contact plus a deal at `closedlost` with `closed_lost_reason`. Escalations become a contact only.
 - If your pipeline or stage IDs differ, check them with `GET /crm/v3/pipelines/deals` and set `HUBSPOT_PIPELINE`, `HUBSPOT_STAGE_OPEN` and `HUBSPOT_STAGE_LOST`.
 

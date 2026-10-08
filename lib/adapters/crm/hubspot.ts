@@ -3,7 +3,7 @@ import { findPriceLeaks } from "@/lib/guard/price-guard";
 import type { CRMProvider, CRMSyncResult } from "./types";
 
 /**
- * HubSpot CRM via a private-app token (scopes: crm.objects.contacts.read/write,
+ * HubSpot CRM via a service key or private-app token, both sent as a Bearer token (scopes: crm.objects.contacts.read/write,
  * crm.objects.deals.read/write). Uses the v3 object endpoints, which HubSpot
  * still serves alongside the newer date-versioned paths. Sources, checked 2026-10-08:
  *  - https://developers.hubspot.com/docs/api-reference/latest/crm/objects/contacts/guide
