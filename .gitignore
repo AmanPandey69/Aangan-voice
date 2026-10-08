@@ -1,0 +1,17 @@
+node_modules/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+.vercel/
+
+# secrets — never commit
+.env*
+!.env.example
+
+# internal-only pricing guide must never enter the repo
+docs/pricing.md
+**/pricing.md
+
+.DS_Store
