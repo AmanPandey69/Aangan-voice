@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { services } from "@/lib/container";
 import type { LeadFilter } from "@/lib/db/types";
-import { fmtDate, StatusPill, VerdictBadge } from "@/app/ui";
+import { fmtDate, Hero, StatusPill, VerdictBadge } from "@/app/ui";
+import { MEDIA } from "@/config/media";
 import { displayPhone } from "@/lib/phone";
 
 export const dynamic = "force-dynamic";
@@ -20,13 +21,22 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
     needsReview: sp.review === "1" ? true : undefined,
   };
   const leads = await services().repo.listLeads(filter);
+  const count = (fn: (l: (typeof leads)[number]) => boolean) => leads.filter(fn).length;
 
   return (
     <>
-      <div className="page-head">
-        <h1>Enquiries</h1>
-        <span className="muted">{leads.length} shown</span>
-      </div>
+      <Hero
+        image={MEDIA.heroEnquiries}
+        eyebrow="Aangan Studio · Pune"
+        title="Enquiries"
+        subtitle="Every call the assistant answered, with its verdict, booking and follow-up."
+        stats={[
+          { label: "shown", value: leads.length },
+          { label: "qualified", value: count((l) => l.verdict === "qualified") },
+          { label: "booked", value: count((l) => l.booking_status === "booked") },
+          { label: "to review", value: count((l) => l.review_reasons.length > 0 && !l.review_resolved_at) },
+        ]}
+      />
       <form className="filters" method="get">
         <input name="q" placeholder="Search name, phone, locality" defaultValue={sp.q ?? ""} />
         <select name="verdict" defaultValue={sp.verdict ?? ""}>
@@ -42,7 +52,8 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
           <option value="30d">Last 30 days</option><option value="all">All time</option>
         </select>
         <label className="check"><input type="checkbox" name="review" value="1" defaultChecked={sp.review === "1"} /> Needs review</label>
-        <button type="submit">Filter</button>
+        <button type="submit">Apply filters</button>
+        <a className="btn btn-secondary" href="/calls">Reset</a>
       </form>
       <div className="table-wrap">
         <table className="table">
@@ -50,13 +61,17 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
           <tbody>
             {leads.map((l) => (
               <tr key={l.id}>
-                <td><Link href={`/calls/${l.id}`}>{fmtDate(l.last_call_at)}</Link></td>
-                <td><Link href={`/calls/${l.id}`}>{l.name ?? "Unknown"}</Link><div className="muted small">{displayPhone(l.phone)}</div></td>
+                <td className="nowrap"><Link href={`/calls/${l.id}`}>{fmtDate(l.last_call_at)}</Link></td>
+                <td><Link href={`/calls/${l.id}`} className="caller-name">{l.name ?? "Unknown caller"}</Link><div className="muted small">{displayPhone(l.phone)}</div></td>
                 <td>{l.locality ?? "—"}</td>
                 <td>{[l.facts.bhk ? `${l.facts.bhk}BHK` : null, l.facts.property_type?.replace(/_/g, " "), l.facts.carpet_area_sqft ? `${l.facts.carpet_area_sqft} sq ft` : null].filter(Boolean).join(" · ") || "—"}</td>
                 <td><VerdictBadge verdict={l.verdict} urgent={l.urgent} /></td>
                 <td><StatusPill value={l.booking_status} /></td>
-                <td className="small">{[...l.flags, ...l.review_reasons.map((r) => `review: ${r}`)].map((f) => f.replace(/_/g, " ")).join(", ") || "—"}</td>
+                <td>
+                  {l.flags.map((f) => <span key={f} className="flag">{f.replace(/_/g, " ")}</span>)}
+                  {!l.review_resolved_at && l.review_reasons.map((r) => <span key={r} className="flag review">review: {r.replace(/_/g, " ")}</span>)}
+                  {l.flags.length === 0 && (l.review_resolved_at || l.review_reasons.length === 0) && <span className="muted">—</span>}
+                </td>
               </tr>
             ))}
             {leads.length === 0 && <tr><td colSpan={7} className="muted empty">No enquiries match these filters.</td></tr>}

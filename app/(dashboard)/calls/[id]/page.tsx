@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { services } from "@/lib/container";
 import type { CriterionKey } from "@/lib/domain/lead";
-import { fmtDate, fmtDuration, StatusPill, VerdictBadge } from "@/app/ui";
+import { fmtDate, fmtDuration, Hero, StatusPill, VerdictBadge } from "@/app/ui";
 import { resolveReview } from "./actions";
 import { displayPhone } from "@/lib/phone";
 
@@ -42,23 +42,24 @@ export default async function CallDetail({ params }: { params: Promise<{ id: str
 
   return (
     <>
-      <p><Link href="/calls">← All enquiries</Link></p>
-      <div className="page-head">
-        <h1>{lead.name ?? "Unknown caller"}</h1>
-        <VerdictBadge verdict={lead.verdict} urgent={lead.urgent} />
-        <StatusPill value={lead.booking_status} />
-      </div>
-      {f.summary && <p className="lede">{f.summary}</p>}
+      <p><Link href="/calls" className="btn btn-secondary">← All enquiries</Link></p>
+      <Hero compact eyebrow={[lead.locality, f.bhk ? `${f.bhk}BHK` : null, f.property_type?.replace(/_/g, " ")].filter(Boolean).join(" · ") || "Enquiry"}
+        title={lead.name ?? "Unknown caller"} subtitle={f.summary || undefined}>
+        <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+          <span style={{ background: "#fff", borderRadius: 999 }}><VerdictBadge verdict={lead.verdict} urgent={lead.urgent} /></span>
+          <span style={{ background: "#fff", borderRadius: 999 }}><StatusPill value={lead.booking_status} /></span>
+        </div>
+      </Hero>
 
       {openReview && (
         <div className="card warn">
           <strong>In review queue:</strong> {lead.review_reasons.map((r) => r.replace(/_/g, " ")).join(", ")}
-          <form action={resolveReview.bind(null, lead.id)} className="inline"><button>Mark resolved</button></form>
+          <form action={resolveReview.bind(null, lead.id)} className="inline"><button className="btn-sea">✓ Mark resolved</button></form>
         </div>
       )}
 
       <div className="grid2">
-        <section className="card">
+        <section className="card accent">
           <h2>Verdict</h2>
           <p><strong>{lead.verdict ?? "pending"}</strong> — {lead.reason ?? "not processed yet"}</p>
           {lead.live_verdict && <p className="small muted">Live verdict during call: {lead.live_verdict}{lead.verdict_mismatch ? " (MISMATCH)" : ""}</p>}
@@ -75,7 +76,7 @@ export default async function CallDetail({ params }: { params: Promise<{ id: str
           {lead.extraction_failed && <p className="error">Automatic extraction failed. Read the transcript and decide manually.</p>}
         </section>
 
-        <section className="card">
+        <section className="card accent">
           <h2>Booking &amp; follow-up</h2>
           {bookings.length ? bookings.map((b) => (
             <p key={b.id}>{fmtDate(b.start_at)} · <StatusPill value={b.status} /> <span className="small muted">{b.provider} {b.provider_booking_id}</span></p>
@@ -92,7 +93,7 @@ export default async function CallDetail({ params }: { params: Promise<{ id: str
             ))}</tbody></table>
           ) : <p className="muted">No emails sent.</p>}
           <h3>CRM</h3>
-          <p className="small">{lead.hubspot_deal_id ? <>HubSpot deal {crmUrl ? <a href={crmUrl} target="_blank" rel="noreferrer">{lead.hubspot_deal_id}</a> : lead.hubspot_deal_id}</> : "Not synced yet"}</p>
+          <p className="small">{lead.hubspot_deal_id ? <>{crmUrl ? <a className="btn btn-soft" href={crmUrl} target="_blank" rel="noreferrer">Open deal in HubSpot →</a> : <>HubSpot deal {lead.hubspot_deal_id}</>}</> : "Not synced yet"}</p>
         </section>
       </div>
 
@@ -105,7 +106,7 @@ export default async function CallDetail({ params }: { params: Promise<{ id: str
         <section className="card" key={c.id}>
           <h2>Call {fmtDate(c.started_at)} · {fmtDuration(c.duration_sec)} · <StatusPill value={c.status} /></h2>
           <p className="small">
-            {c.recording_url ? <a href={c.recording_url} target="_blank" rel="noreferrer">Recording</a> : "No recording"}
+            {c.recording_url ? <a className="btn btn-soft" href={c.recording_url} target="_blank" rel="noreferrer">▶ Recording</a> : "No recording"}
             {" · "}extraction {c.extraction_status} · voice ${Number(c.voice_cost_usd).toFixed(3)} · LLM ${Number(c.llm_cost_usd).toFixed(4)}
           </p>
           {c.transcript ? (

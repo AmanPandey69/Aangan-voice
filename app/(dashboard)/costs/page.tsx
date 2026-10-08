@@ -2,6 +2,8 @@ import { services } from "@/lib/container";
 import { computeMetrics } from "@/lib/metrics";
 import { COSTS } from "@/config/costs";
 import { env } from "@/lib/env";
+import { Hero } from "@/app/ui";
+import { MEDIA } from "@/config/media";
 
 export const dynamic = "force-dynamic";
 
@@ -32,15 +34,15 @@ export default async function CostsPage({ searchParams }: { searchParams: Promis
 
   return (
     <>
-      <div className="page-head">
-        <h1>Costs &amp; performance</h1>
-        <form method="get" className="inline">
+      <Hero image={MEDIA.heroCosts} eyebrow="Running costs" title="Costs & performance"
+        subtitle="What the assistant costs to run, and how well it answers and converts.">
+        <form method="get" className="inline" style={{ marginLeft: 0, marginTop: 14 }}>
           <select name="days" defaultValue={String(days)}>
             <option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option>
           </select>
           <button>Show</button>
         </form>
-      </div>
+      </Hero>
       <div className="tiles">{tiles.map(([k, v, sub]) => (
         <div className="tile" key={k}><div className="tile-label">{k}</div><div className="tile-value">{v}</div>{sub && <div className="small muted">{sub}</div>}</div>
       ))}</div>
@@ -51,7 +53,7 @@ export default async function CostsPage({ searchParams }: { searchParams: Promis
           Vendor costs only. Voice cost comes from the provider when it reports one, otherwise minutes × VOICE_USD_PER_MINUTE
           ({COSTS.voiceUsdPerMinute ? `$${COSTS.voiceUsdPerMinute}/min` : "not set"}). The sales funnel after the consultation lives in HubSpot.
         </p>
-        {portal && <p><a href={`https://app.hubspot.com/contacts/${portal}/objects/0-3/views/all/board`} target="_blank" rel="noreferrer">Open Nikhil&apos;s HubSpot deal board →</a></p>}
+        {portal && <p><a className="btn btn-sea" href={`https://app.hubspot.com/contacts/${portal}/objects/0-3/views/all/board`} target="_blank" rel="noreferrer">Open the HubSpot deal board →</a></p>}
       </section>
     </>
   );

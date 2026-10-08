@@ -14,7 +14,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   return (
     <div className="shell">
       <header className="topbar">
-        <Link href="/calls" className="brand">Aangan Studio · Enquiries</Link>
+        <Link href="/calls" className="brand"><span className="brand-mark">A</span> Aangan Studio</Link>
         <nav>
           <Link href="/calls">Calls</Link>
           <Link href="/review">Review queue</Link>

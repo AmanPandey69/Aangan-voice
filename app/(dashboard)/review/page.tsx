@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { services } from "@/lib/container";
 import type { LeadRow, ReviewReason } from "@/lib/db/types";
-import { fmtDate, VerdictBadge } from "@/app/ui";
+import { fmtDate, Hero, VerdictBadge } from "@/app/ui";
+import { MEDIA } from "@/config/media";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,13 @@ export default async function ReviewPage() {
 
   return (
     <>
-      <div className="page-head"><h1>Review queue</h1><span className="muted">{leads.length} open</span></div>
+      <Hero
+        image={MEDIA.heroReview}
+        eyebrow="Needs a person"
+        title="Review queue"
+        subtitle="Escalations, manual bookings, unacknowledged handoffs and anything the rules weren't sure about."
+        stats={[{ label: "open", value: leads.length }, { label: "failed jobs", value: dead.length }]}
+      />
       {GROUPS.map(({ reason, title, hint }) => {
         const rows = by(reason);
         if (!rows.length) return null;
@@ -39,7 +46,7 @@ export default async function ReviewPage() {
           </section>
         );
       })}
-      {leads.length === 0 && <p className="muted">Nothing to review.</p>}
+      {leads.length === 0 && <section className="card"><h2>All clear</h2><p className="muted">Nothing needs a person right now.</p></section>}
       {dead.length > 0 && (
         <section className="card warn">
           <h2>Failed jobs (dead letters) <span className="count">{dead.length}</span></h2>
