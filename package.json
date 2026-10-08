@@ -12,7 +12,8 @@
     "replay": "vitest run tests/replay.test.ts",
     "replay:live": "tsx scripts/replay-live.ts",
     "smoke": "tsx scripts/smoke-test.ts",
-    "vercel-build": "vitest run && next build"
+    "vercel-build": "vitest run && next build",
+    "db:migrate": "tsx scripts/db-migrate.ts"
   },
   "engines": {
     "node": ">=20"
