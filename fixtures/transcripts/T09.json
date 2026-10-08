@@ -1,0 +1,60 @@
+{
+  "id": "T09",
+  "caller_phone": "+919800000009",
+  "header": "T09 · Phone · 10 September · 11:32am · 5 min 52 sec — ESCALATE",
+  "notes": [
+    "Existing project complaint. Escalated to studio head immediately."
+  ],
+  "calls": [
+    {
+      "call_id": "fx-T09-1",
+      "started_at": "2026-09-10T11:32:00+05:30",
+      "duration_sec": 352,
+      "status": "completed",
+      "turns": [
+        {
+          "speaker": "agent",
+          "text": "Good morning, Aangan Studio."
+        },
+        {
+          "speaker": "caller",
+          "text": "I need to speak to someone right now. My project has been going for three months and my designer hasn't replied in five days. This is not acceptable."
+        },
+        {
+          "speaker": "agent",
+          "text": "I'm very sorry. Can I take your name and project details?"
+        },
+        {
+          "speaker": "caller",
+          "text": "Sheetal Deshpande. My designer is Aryan. Flat in Viman Nagar — 2BHK. I've sent three messages and called twice."
+        },
+        {
+          "speaker": "agent",
+          "text": "Sheetal, I'm getting this to our project team right now. Would you prefer to hold for two minutes, or should I have someone senior call you back within 15 minutes?"
+        },
+        {
+          "speaker": "caller",
+          "text": "Callback. And I want it from Nikhil or a senior person — not just whoever picks up."
+        },
+        {
+          "speaker": "agent",
+          "text": "Noted. I'll make sure of that."
+        }
+      ]
+    }
+  ],
+  "expected": "escalate",
+  "facts": {
+    "name": "Sheetal Deshpande",
+    "locality": "Viman Nagar",
+    "property_type": "apartment",
+    "segment": "residential",
+    "bhk": 2,
+    "existing_client_complaint": true,
+    "requested_human": true,
+    "frustrated": true,
+    "summary": "Existing client: designer Aryan unresponsive for five days; wants callback from Nikhil or a senior person.",
+    "phone": "+919800000009",
+    "language": "en"
+  }
+}

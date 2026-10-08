@@ -1,0 +1,92 @@
+{
+  "id": "T01",
+  "caller_phone": "+919800000001",
+  "header": "T01 · Phone · 2 September · 10:23am · 4 min 12 sec",
+  "notes": [],
+  "calls": [
+    {
+      "call_id": "fx-T01-1",
+      "started_at": "2026-09-02T10:23:00+05:30",
+      "duration_sec": 252,
+      "status": "completed",
+      "turns": [
+        {
+          "speaker": "agent",
+          "text": "Good morning, Aangan Studio."
+        },
+        {
+          "speaker": "caller",
+          "text": "Hi, I'm Priya. I got your number from a friend — Shruti Joshi. She had her flat done by you in Aundh."
+        },
+        {
+          "speaker": "agent",
+          "text": "Of course — thank you for calling. What are you looking to do?"
+        },
+        {
+          "speaker": "caller",
+          "text": "We have a 3BHK in Kothrud — Dahanukar Colony. We bought it two years ago and it still looks like the builder flat. We want to redo the whole thing — kitchen, living room, both bedrooms."
+        },
+        {
+          "speaker": "agent",
+          "text": "That sounds like a complete redesign. How big is the apartment?"
+        },
+        {
+          "speaker": "caller",
+          "text": "About 1,400 sq ft carpet."
+        },
+        {
+          "speaker": "agent",
+          "text": "And your timeline?"
+        },
+        {
+          "speaker": "caller",
+          "text": "We'd like to be done by March. We're in no rush."
+        },
+        {
+          "speaker": "agent",
+          "text": "Perfect. Are you the owner?"
+        },
+        {
+          "speaker": "caller",
+          "text": "Yes — myself and my husband. He knows we're calling and is happy to go ahead."
+        },
+        {
+          "speaker": "agent",
+          "text": "Lovely. Can I take your number and schedule a consultation?"
+        },
+        {
+          "speaker": "caller",
+          "text": "Sure. (gives number)"
+        }
+      ]
+    }
+  ],
+  "expected": "qualified",
+  "facts": {
+    "name": "Priya",
+    "locality": "Kothrud, Dahanukar Colony",
+    "city": "Pune",
+    "property_type": "apartment",
+    "segment": "residential",
+    "bhk": 3,
+    "carpet_area_sqft": 1400,
+    "scope_type": "full_home",
+    "scope_rooms": [
+      "kitchen",
+      "living room",
+      "bedrooms"
+    ],
+    "wants_execution": true,
+    "property_status": "occupied",
+    "timeline_raw": "Done by March, no rush",
+    "completion_by": "2027-03-01",
+    "site_available_from": "2026-09-02",
+    "decision_maker": "authorised",
+    "decision_maker_note": "Co-owner husband knows and is happy to go ahead",
+    "referral": "Shruti Joshi (past client, Aundh)",
+    "source": "referral",
+    "summary": "3BHK full redesign in Kothrud, referred by a past client, done by March.",
+    "phone": "+919800000001",
+    "language": "en"
+  }
+}
