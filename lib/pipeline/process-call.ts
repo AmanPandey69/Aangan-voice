@@ -4,7 +4,7 @@ import type { LeadRow, NewLead } from "@/lib/db/types";
 import { evaluate } from "@/lib/rules/engine";
 import { extractLead } from "@/lib/extraction/extract";
 import { agentLines, findPriceLeaks } from "@/lib/guard/price-guard";
-import { normalisePhone } from "@/lib/phone";
+import { hasRealPhone, normalisePhone } from "@/lib/phone";
 import { mergeFacts } from "./merge";
 import { reviewReasons } from "./review";
 
@@ -63,7 +63,8 @@ export async function processCall(s: Services, incoming: NormalizedCall, webhook
     webhook_event_id: webhookEventId, processed_at: null,
   });
 
-  const phone = normalisePhone(call.callerPhone) ?? `unknown:${call.providerCallId}`;
+  // Online (browser) calls have no number: key the lead by call id so each test call is its own lead.
+  const phone = normalisePhone(call.callerPhone) ?? `online:${call.providerCallId}`;
   let lead = await findOrCreateLead(s, phone);
   const at = call.startedAt ?? new Date().toISOString();
 
@@ -94,6 +95,12 @@ export async function processCall(s: Services, incoming: NormalizedCall, webhook
   }
 
   const facts = mergeFacts(lead.facts, extraction.facts);
+
+  // Online call: if the caller said their number, re-key the lead to it (unless that number already has a lead).
+  const spoken = normalisePhone(facts.phone);
+  if (!hasRealPhone(lead.phone) && hasRealPhone(spoken) && !(await repo.findLeadByPhone(spoken))) {
+    lead = await repo.updateLead(lead.id, { phone: spoken });
+  }
   const ev = evaluate(facts, { now: new Date(at), mode: "final" });
 
   const liveVerdict = callRow.live_verdict;

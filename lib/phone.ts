@@ -16,3 +16,13 @@ export function normalisePhone(raw: string | null | undefined): string | null {
 export function isTestNumber(phone: string | null | undefined): boolean {
   return Boolean(phone && /^\+910000\d{6}$/.test(phone));
 }
+
+/** Online (browser) calls have no caller number; the lead is keyed by the call id instead. */
+export function hasRealPhone(phone: string | null | undefined): phone is string {
+  return Boolean(phone && /^\+\d{8,15}$/.test(phone));
+}
+
+/** How to show a lead's phone to people. */
+export function displayPhone(phone: string): string {
+  return hasRealPhone(phone) ? phone : "Not captured (online call)";
+}

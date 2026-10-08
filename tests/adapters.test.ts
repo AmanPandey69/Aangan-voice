@@ -185,3 +185,23 @@ describe("Vaani real payload (captured from Vaani's webhook test, 2026-10-08)", 
     expect(v.parseCallStart(sample)).toBeNull();
   });
 });
+
+describe("online (browser) calls without a phone number", () => {
+  it("HubSpot creates a contact without phone and skips the phone search", async () => {
+    const calls: { url: string; body: Record<string, unknown> }[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (url: string, init: RequestInit) => {
+      calls.push({ url, body: init.body ? JSON.parse(String(init.body)) : {} });
+      return new Response(JSON.stringify({ id: url.endsWith("/contacts") ? "C9" : "D9" }));
+    }));
+    const lead = {
+      id: "L9", phone: "online:web-123", channel: "phone", name: "Test", email: null, locality: "Baner",
+      facts: emptyFacts({ summary: "s" }), verdict: "qualified", urgent: false, reason: "ok", criteria: null, flags: [], uncertainties: [],
+      live_verdict: null, verdict_mismatch: false, price_leak: false, booking_status: "booked", booked_slot: null, preferred_time_raw: null,
+      hubspot_contact_id: null, hubspot_deal_id: null, review_reasons: [], review_resolved_at: null, extraction_failed: false,
+      first_seen_at: "", last_call_at: "", created_at: "", updated_at: "",
+    } as LeadRow;
+    await new HubSpotCRM("t", undefined).syncLead(lead, "u");
+    expect(calls.some((c) => c.url.endsWith("/search"))).toBe(false);
+    expect((calls.find((c) => c.url.endsWith("/contacts"))!.body as { properties: Record<string, string> }).properties.phone).toBeUndefined();
+  });
+});

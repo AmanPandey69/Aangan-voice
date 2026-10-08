@@ -309,3 +309,21 @@ describe("Vaani format end to end", () => {
     expect(MockNotifier.outbox).toHaveLength(0);
   });
 });
+
+describe("online call (no caller ID)", () => {
+  it("uses the number the caller spoke, and links the Cal.com booking made by Vaani", async () => {
+    const s = freshServices();
+    const fx = fixtures.T01;
+    // Vaani's Cal.com integration books first, with the spoken number.
+    await calcomWebhook(signed("http://x", { triggerEvent: "BOOKING_CREATED", payload: { uid: "web-bk", startTime: "2026-09-05T05:30:00Z", responses: { attendeePhoneNumber: { value: "+919811112222" } } } }));
+    MockLLM.register("web-1", { ...fx.facts, phone: "98111 12222" });
+    const call = s.voice.parseWebhook({ event_id: "e-web-1", event: "call.ended", call: { providerCallId: "web-1", callerPhone: null, startedAt: fx.calls[0].started_at, durationSec: 200, status: "completed", turns: fx.calls[0].turns } })!;
+    await processCall(s, call, null);
+    await drainJobs(s);
+    const lead = (await s.repo.findLeadByPhone("+919811112222"))!;
+    expect(lead).toBeTruthy();
+    expect(lead.booking_status).toBe("booked");
+    expect(MockNotifier.outbox[0].subject).toMatch(/^New consultation booked: Priya/);
+    expect(MockNotifier.outbox[0].text).toContain("Phone: +919811112222");
+  });
+});

@@ -80,3 +80,11 @@ describe("handoff email", () => {
   it("escapes HTML in caller-provided text", () =>
     expect(build("booked", lead({ name: "<script>x</script>" })).html).not.toContain("<script>"));
 });
+
+describe("online-call lead", () => {
+  it("shows 'Not captured' instead of an internal id", () => {
+    const e = build("booked", lead({ phone: "online:web-1" }));
+    expect(e.text).toContain("Phone: Not captured (online call)");
+    expect(e.text).not.toContain("online:web-1");
+  });
+});

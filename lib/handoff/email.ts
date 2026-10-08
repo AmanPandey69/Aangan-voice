@@ -1,6 +1,7 @@
 import type { LeadRow } from "@/lib/db/types";
 import type { LeadFacts } from "@/lib/domain/lead";
 import { assertNoPriceLeak } from "@/lib/guard/price-guard";
+import { displayPhone } from "@/lib/phone";
 
 export type HandoffVariant = "booked" | "priority_booked" | "manual_booking" | "escalation" | "budget_review" | "reminder";
 
@@ -55,7 +56,7 @@ export function buildSubject(i: HandoffEmailInput): string {
     case "booked": return `New consultation booked: ${who}, ${where}, ${what}`;
     case "priority_booked": return `URGENT · Priority consultation booked: ${who}, ${where}, ${what}`;
     case "manual_booking": return `URGENT · Needs manual booking: ${who}, ${where}, ${what}`;
-    case "escalation": return `URGENT · Escalation (${ESCALATION_LABEL[i.lead.reason ?? ""] ?? "needs a person"}): ${who}, ${i.lead.phone}`;
+    case "escalation": return `URGENT · Escalation (${ESCALATION_LABEL[i.lead.reason ?? ""] ?? "needs a person"}): ${who}, ${displayPhone(i.lead.phone)}`;
     case "budget_review": return `Review needed: ${who}, ${where}, ${what} (budget check)`;
     case "reminder": return `Reminder, please acknowledge: ${i.originalSubject ?? `${who}, ${where}`}`;
   }
@@ -68,13 +69,13 @@ function rows(i: HandoffEmailInput): [string, string][] {
   const slotText = slot ?? (l.booking_status === "needs_manual_booking"
     ? `NOT BOOKED. Preferred time: ${l.preferred_time_raw ?? "not stated"}. Please call to book.` : "Not booked");
   if (i.minimal) {
-    return [["Name", l.name ?? "Not stated"], ["Phone", l.phone], ["Locality", l.locality ?? "Not stated"],
+    return [["Name", l.name ?? "Not stated"], ["Phone", displayPhone(l.phone)], ["Locality", l.locality ?? "Not stated"],
       ["Booked slot", slotText], ["Details", "See the dashboard for the full enquiry."]];
   }
   return [
     ["Verdict", `${l.verdict ?? "pending"}${l.urgent ? " (urgent)" : ""}`],
     ["Name", l.name ?? "Not stated"],
-    ["Phone", l.phone],
+    ["Phone", displayPhone(l.phone)],
     ["Email", l.email ?? "Not stated"],
     ["Locality", l.locality ?? "Not stated"],
     ["Property type", propertyLabel(f)],

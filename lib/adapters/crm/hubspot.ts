@@ -1,5 +1,6 @@
 import type { LeadRow } from "@/lib/db/types";
 import { findPriceLeaks } from "@/lib/guard/price-guard";
+import { hasRealPhone } from "@/lib/phone";
 import type { CRMProvider, CRMSyncResult } from "./types";
 
 /**
@@ -39,6 +40,7 @@ export class HubSpotCRM implements CRMProvider {
 
   private async findContact(lead: LeadRow): Promise<string | null> {
     if (lead.hubspot_contact_id) return lead.hubspot_contact_id;
+    if (!lead.email && !hasRealPhone(lead.phone)) return null; // online call with no contact details: always a new contact
     const filters = lead.email
       ? [{ propertyName: "email", operator: "EQ", value: lead.email }]
       // Phone search matches on the national number without the country code.
@@ -50,9 +52,9 @@ export class HubSpotCRM implements CRMProvider {
   async syncLead(lead: LeadRow, dashboardUrl: string): Promise<CRMSyncResult> {
     const [firstname, ...rest] = (lead.name ?? "").trim().split(/\s+/);
     const contactProps: Record<string, string> = {
-      phone: lead.phone,
       hs_lead_status: lead.verdict === "qualified" ? "OPEN_DEAL" : lead.verdict === "declined" ? "UNQUALIFIED" : "IN_PROGRESS",
     };
+    if (hasRealPhone(lead.phone)) contactProps.phone = lead.phone;
     if (firstname) contactProps.firstname = firstname;
     if (rest.length) contactProps.lastname = rest.join(" ");
     if (lead.email) contactProps.email = lead.email;

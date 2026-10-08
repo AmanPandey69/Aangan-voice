@@ -2,6 +2,7 @@ import Link from "next/link";
 import { services } from "@/lib/container";
 import type { LeadFilter } from "@/lib/db/types";
 import { fmtDate, StatusPill, VerdictBadge } from "@/app/ui";
+import { displayPhone } from "@/lib/phone";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +51,7 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
             {leads.map((l) => (
               <tr key={l.id}>
                 <td><Link href={`/calls/${l.id}`}>{fmtDate(l.last_call_at)}</Link></td>
-                <td><Link href={`/calls/${l.id}`}>{l.name ?? "Unknown"}</Link><div className="muted small">{l.phone}</div></td>
+                <td><Link href={`/calls/${l.id}`}>{l.name ?? "Unknown"}</Link><div className="muted small">{displayPhone(l.phone)}</div></td>
                 <td>{l.locality ?? "—"}</td>
                 <td>{[l.facts.bhk ? `${l.facts.bhk}BHK` : null, l.facts.property_type?.replace(/_/g, " "), l.facts.carpet_area_sqft ? `${l.facts.carpet_area_sqft} sq ft` : null].filter(Boolean).join(" · ") || "—"}</td>
                 <td><VerdictBadge verdict={l.verdict} urgent={l.urgent} /></td>

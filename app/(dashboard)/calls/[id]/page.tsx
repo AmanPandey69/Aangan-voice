@@ -4,6 +4,7 @@ import { services } from "@/lib/container";
 import type { CriterionKey } from "@/lib/domain/lead";
 import { fmtDate, fmtDuration, StatusPill, VerdictBadge } from "@/app/ui";
 import { resolveReview } from "./actions";
+import { displayPhone } from "@/lib/phone";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,7 @@ export default async function CallDetail({ params }: { params: Promise<{ id: str
   const openReview = lead.review_reasons.length > 0 && !lead.review_resolved_at;
 
   const facts: [string, string | number | boolean | null | undefined][] = [
-    ["Phone", lead.phone], ["Email", lead.email], ["Locality", lead.locality], ["City", f.city],
+    ["Phone", displayPhone(lead.phone)], ["Email", lead.email], ["Locality", lead.locality], ["City", f.city],
     ["Property", [f.bhk ? `${f.bhk}BHK` : null, f.property_type?.replace(/_/g, " ")].filter(Boolean).join(" ")],
     ["Segment", f.segment], ["Carpet area", f.carpet_area_sqft ? `${f.carpet_area_sqft} sq ft` : null],
     ["Scope", f.scope_type?.replace(/_/g, " ")], ["Rooms", f.scope_rooms?.join(", ")],

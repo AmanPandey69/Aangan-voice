@@ -36,11 +36,11 @@ export class MockCalendar implements CalendarProvider {
   verifyWebhook(rawBody: string, headers: Headers) { return safeEqual(headers.get("x-mock-signature"), hmacHex(this.secret, rawBody)); }
 
   parseWebhook(payload: unknown): CalendarWebhookEvent | null {
-    const p = payload as { triggerEvent?: string; payload?: { uid?: string; startTime?: string; endTime?: string; metadata?: { lead_id?: string }; attendees?: { email?: string; phoneNumber?: string }[] } };
+    const p = payload as { triggerEvent?: string; payload?: { uid?: string; startTime?: string; endTime?: string; metadata?: { lead_id?: string }; attendees?: { email?: string; phoneNumber?: string }[]; responses?: { attendeePhoneNumber?: { value?: string } } } };
     if (!p?.payload?.uid) return null;
     const type = p.triggerEvent === "BOOKING_CREATED" ? "booking_created" : p.triggerEvent === "BOOKING_CANCELLED" ? "booking_cancelled" : "other";
     return { type, bookingId: p.payload.uid, start: p.payload.startTime ?? null, end: p.payload.endTime ?? null,
-      attendeeEmail: p.payload.attendees?.[0]?.email ?? null, attendeePhone: p.payload.attendees?.[0]?.phoneNumber ?? null,
+      attendeeEmail: p.payload.attendees?.[0]?.email ?? null, attendeePhone: p.payload.attendees?.[0]?.phoneNumber ?? p.payload.responses?.attendeePhoneNumber?.value ?? null,
       leadId: p.payload.metadata?.lead_id ?? null, eventId: `${p.triggerEvent}:${p.payload.uid}` };
   }
 }
