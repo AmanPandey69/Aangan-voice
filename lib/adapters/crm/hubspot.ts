@@ -10,9 +10,10 @@ import type { CRMProvider, CRMSyncResult } from "./types";
  *  - https://developers.hubspot.com/docs/api-reference/latest/crm/objects/deals/guide
  *  - https://developers.hubspot.com/docs/api-reference/latest/crm/associations/associate-records/guide
  *
- * TODO(hubspot): confirm the stage IDs and the closed-lost reason property name
- * in your portal (GET /crm/v3/pipelines/deals, GET /crm/v3/properties/deals) and
- * set HUBSPOT_PIPELINE / HUBSPOT_STAGE_OPEN / HUBSPOT_STAGE_LOST if they differ.
+ * Stage IDs and properties confirmed in the Aangan Studio portal on 2026-10-08
+ * (pipeline "default": appointmentscheduled … closedlost; closed_lost_reason exists).
+ * If the pipeline is customised later, set HUBSPOT_PIPELINE / HUBSPOT_STAGE_OPEN /
+ * HUBSPOT_STAGE_LOST (check with GET /crm/v3/pipelines/deals).
  */
 const API = "https://api.hubapi.com";
 const DEAL_TO_CONTACT = 3;

@@ -155,4 +155,4 @@ It checks health and auth, calls the evaluate and availability tools, and sends 
 
 - **Vaani:** custom functions are not publicly documented. Booking uses Vaani's Cal.com integration, and the live verdict comes from the `qualification` disposition. It's also unconfirmed whether dashboard webhooks are signed like campaign webhooks (the URL-token fallback covers this). The timezone of call-history timestamps and per-credit pricing (`VAANI_USD_PER_CREDIT`) are unconfirmed, as is Marathi support.
 - **Cal.com:** the webhook signature encoding isn't stated in the docs. The app uses hex HMAC over the raw body; send a test delivery after setup to confirm.
-- **HubSpot:** confirm the stage IDs and the `closed_lost_reason` property name in your portal.
+- **HubSpot:** confirmed for the studio's portal (default pipeline stages and `closed_lost_reason`). Re-check if the pipeline is customised.
