@@ -6,9 +6,13 @@
 const num = (v: string | undefined, d: number) => (v && !Number.isNaN(Number(v)) ? Number(v) : d);
 
 export const COSTS = {
-  /** Claude Opus 5.5, USD per million tokens (input / output). */
-  llmInputUsdPerMTok: num(process.env.LLM_INPUT_USD_PER_MTOK, 4),
-  llmOutputUsdPerMTok: num(process.env.LLM_OUTPUT_USD_PER_MTOK, 20),
+  /**
+   * LLM, USD per million tokens (input / output). Defaults: Gemini 3.8 Flash paid
+   * tier through 2026-12-31 (it doubles on 2027-01-01; set the env vars then).
+   * If you use Claude instead (LLM_PROVIDER=anthropic), set these to its rates.
+   */
+  llmInputUsdPerMTok: num(process.env.LLM_INPUT_USD_PER_MTOK, 0.75),
+  llmOutputUsdPerMTok: num(process.env.LLM_OUTPUT_USD_PER_MTOK, 3.75),
   /** Voice minutes. TODO(vaani): set from the Vaani plan once confirmed. */
   voiceUsdPerMinute: num(process.env.VOICE_USD_PER_MINUTE, 0),
   /** Resend per-email marginal cost (0 on the free tier). */

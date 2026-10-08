@@ -28,6 +28,8 @@ export const env = {
   /** Neon Postgres connection string (pooled), e.g. postgresql://user:pass@ep-xxx-pooler.region.aws.neon.tech/neondb?sslmode=require */
   databaseUrl: () => e("DATABASE_URL"),
   llmApiKey: () => e("LLM_API_KEY"),
+  /** "gemini" (default) or "anthropic". */
+  llmProvider: () => (e("LLM_PROVIDER") === "anthropic" ? "anthropic" : "gemini"),
   dashboardPassword: () => e("DASHBOARD_PASSWORD"),
   cronSecret: () => e("CRON_SECRET"),
   isProduction: () => e("VERCEL_ENV") === "production",

@@ -13,6 +13,7 @@ import { MockCRM } from "@/lib/adapters/crm/mock";
 import { MockNotifier } from "@/lib/adapters/notifier/mock";
 import { MockLLM } from "@/lib/adapters/llm/mock";
 import { AnthropicLLM } from "@/lib/adapters/llm/anthropic";
+import { GeminiLLM } from "@/lib/adapters/llm/gemini";
 import { VaaniVoice } from "@/lib/adapters/voice/vaani";
 import { CalcomCalendar } from "@/lib/adapters/calendar/calcom";
 import { HubSpotCRM } from "@/lib/adapters/crm/hubspot";
@@ -52,7 +53,8 @@ export function buildServices(): Services {
     notifier: real(env.resendApiKey())
       ? new ResendNotifier(env.resendApiKey()!, env.fromEmail(), env.resendWebhookSecret())
       : new MockNotifier(requireSecret(env.resendWebhookSecret(), "RESEND_WEBHOOK_SECRET")),
-    llm: real(env.llmApiKey()) ? new AnthropicLLM(env.llmApiKey()!) : new MockLLM(),
+    llm: !real(env.llmApiKey()) ? new MockLLM()
+      : env.llmProvider() === "anthropic" ? new AnthropicLLM(env.llmApiKey()!) : new GeminiLLM(env.llmApiKey()!),
   };
 }
 

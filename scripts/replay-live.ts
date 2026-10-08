@@ -3,10 +3,11 @@
  * and reports where the verdict or key fields differ from the labelled
  * fixtures. Costs real money (about 19 extraction calls).
  *
- *   LLM_API_KEY=... npm run replay:live
+ *   LLM_API_KEY=... npm run replay:live          (Gemini; LLM_PROVIDER=anthropic for Claude)
  */
 import { loadFixtures, transcriptText } from "../fixtures/load";
 import { AnthropicLLM } from "../lib/adapters/llm/anthropic";
+import { GeminiLLM } from "../lib/adapters/llm/gemini";
 import { extractLead } from "../lib/extraction/extract";
 import { evaluate } from "../lib/rules/engine";
 
@@ -15,7 +16,7 @@ const KEY_FIELDS = ["locality", "scope_type", "wants_execution", "completion_by"
 async function main() {
   const key = process.env.LLM_API_KEY;
   if (!key) { console.error("Set LLM_API_KEY to run the live replay."); process.exit(1); }
-  const llm = new AnthropicLLM(key);
+  const llm = process.env.LLM_PROVIDER === "anthropic" ? new AnthropicLLM(key) : new GeminiLLM(key);
   let mismatches = 0, cost = 0;
 
   for (const fx of loadFixtures()) {

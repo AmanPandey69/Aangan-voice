@@ -7,7 +7,7 @@ Caller ─► Vaani agent ──(Cal.com booking during the call)──► Cal.c
               │                                               │ BOOKING_CREATED
               │ call_started / call_postprocessing            ▼
               ▼                                      /api/calcom/webhook
-      /api/vaani/webhook ─► queue ─► extract (Claude) ─► rules engine ─► Neon
+      /api/vaani/webhook ─► queue ─► extract (Gemini) ─► rules engine ─► Neon
                                                     │                  │
                                                     ├─► HubSpot        └─► dashboard
                                                     └─► handoff email (Resend) ─► designer ─► /api/ack
@@ -51,7 +51,7 @@ In mock mode the database is in memory, emails go to an in-memory outbox, and ex
 
 - `npm test` runs everything. Vercel runs it before every build (`vercel-build`), so a failing test, including any price leak, stops the deploy.
 - `npm run replay` replays T01–T20 (`fixtures/transcripts/*.json`, parsed from the September PDF) through the rules engine, using a hand-labelled extraction for each call. `tests/pipeline.test.ts` sends the same calls through the whole pipeline (webhook → extraction → rules → DB → CRM → email) with mock adapters.
-- `LLM_API_KEY=... npm run replay:live` sends the real transcripts through Claude and reports any verdict or field that differs from the labels. This makes about 19 API calls and costs a few cents.
+- `LLM_API_KEY=... npm run replay:live` sends the real transcripts through Gemini and reports any verdict or field that differs from the labels. This makes about 19 API calls and costs a few cents.
 
 Expected outcomes:
 - **Qualified:** T01, T02, T05, T06, T11, T12, T13, T14, T15, T16, T17, T20.
@@ -83,7 +83,7 @@ The source docs conflict in places. Each conflict is a flag, so changing your mi
 |---|---|---|
 | Vercel (Hobby) | A project linked to the GitHub repo | none |
 | Neon | A project (region: AWS Asia Pacific, Singapore or Mumbai if offered). Run `db/schema.sql` in the Neon SQL editor. | `DATABASE_URL` (the **pooled** connection string) |
-| Anthropic | An API key | `LLM_API_KEY` |
+| Google Gemini | An API key from Google AI Studio (Claude also supported with `LLM_PROVIDER=anthropic`) | `LLM_API_KEY` |
 | Vaani (app.vaanivoice.ai) | The agent, an inbound number, a webhook and an API key | `VAANI_API_KEY`, `VAANI_WEBHOOK_SECRET` |
 | Cal.com | A "Design consultation" event type, an API key and a webhook | `CALCOM_API_KEY`, `CALCOM_EVENT_TYPE_ID`, `CALCOM_WEBHOOK_SECRET` |
 | HubSpot | A legacy private app with `crm.objects.contacts.read/write` and `crm.objects.deals.read/write` | `HUBSPOT_TOKEN`, optional `HUBSPOT_PORTAL_ID` |
