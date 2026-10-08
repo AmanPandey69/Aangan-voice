@@ -65,3 +65,19 @@ describe("price guard — everything we say", () => {
     for (const f of figures) expect(outbound.includes(f), f).toBe(false);
   });
 });
+
+describe("agent prompt content", () => {
+  const prompt = fs.readFileSync(path.join(process.cwd(), "agent", "system-prompt.md"), "utf8");
+  it("contains the exact pricing line, AI + recording disclosure, and the closing lines", () => {
+    for (const line of [copy.PRICING_LINE, copy.DISCLOSURE_LINE, copy.GRACEFUL_CLOSE, copy.BUDGET_CLOSE, copy.ESCALATION_LINE, copy.PRICING_REFUSAL_INTERNAL_DOCS])
+      expect(prompt).toContain(line);
+  });
+  it("forbids asking for budget, payment details and IDs, and never says unqualified", () => {
+    expect(prompt).toMatch(/Never ask about budget/);
+    expect(prompt).toMatch(/Never collect payment details/);
+    expect(prompt).toMatch(/Never tell a caller they are unqualified/);
+  });
+  it("asks the five criteria questions", () => {
+    for (const k of ["real_project", "service_area", "timeline", "decision_maker"] as const) expect(prompt).toContain(copy.QUESTIONS[k]);
+  });
+});
