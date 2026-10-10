@@ -414,6 +414,8 @@ audio.player { width: 100%; margin: 6px 0 18px; }
 .call-actions button { flex: 1; }
 .call-mute { background: transparent; color: #fff; border-color: rgba(255,255,255,.5); }
 .call-status { margin: 0 !important; color: rgba(255,255,255,.9); text-align: center; font-size: 14px; }
+.call-caption { margin: 0 !important; max-width: 420px; min-height: 2.6em; color: rgba(255,255,255,.85); text-align: center; font-size: 14px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.call-caption b { font-weight: 600; color: #fff; }
 .call-error { margin: 0 !important; color: #ffd2c4 !important; text-align: center; font-size: 14px; }
 .call-note { font-size: 12px; margin: 4px 0 0 !important; color: rgba(255,255,255,.65) !important; }
 .call-orb { --lvl: 0; width: 104px; height: 104px; border-radius: 50%; position: relative; background: radial-gradient(circle at 35% 30%, #fff, #8fd0ff 30%, #1793FF 70%, #0a4c9c); transform: scale(calc(1 + var(--lvl) * .35)); transition: transform .08s linear; }

@@ -10,6 +10,7 @@ export function CallWidget() {
   const [muted, setMuted] = useState(false);
   const [agentSpeaking, setAgentSpeaking] = useState(false);
   const [seconds, setSeconds] = useState(0);
+  const [caption, setCaption] = useState<{ who: "agent" | "you"; text: string } | null>(null);
   const roomRef = useRef<Room | null>(null);
   const audioRef = useRef<HTMLDivElement>(null);
   const orbRef = useRef<HTMLDivElement>(null);
@@ -20,6 +21,7 @@ export function CallWidget() {
   function listen(track: MediaStreamTrack) {
     const m = meter.current;
     m.ctx ??= new AudioContext();
+    void m.ctx.resume();
     const an = m.ctx.createAnalyser();
     an.fftSize = 256;
     m.ctx.createMediaStreamSource(new MediaStream([track])).connect(an);
@@ -60,7 +62,7 @@ export function CallWidget() {
   useEffect(() => () => { void roomRef.current?.disconnect(); stopMeter(); }, []);
 
   async function start() {
-    setState("connecting"); setMessage(null); setSeconds(0);
+    setState("connecting"); setMessage(null); setSeconds(0); setCaption(null);
     try {
       // Ask for the microphone first so the browser prompt appears straight away.
       const probe = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -70,10 +72,23 @@ export function CallWidget() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Couldn't connect right now.");
 
-      const room = new Room({ adaptiveStream: true, dynacast: true });
+      const room = new Room();
       roomRef.current = room;
+      // Play the agent through a plain audio element only (no Web Audio on the
+      // remote track, which can silence playback in some browsers).
       room.on(RoomEvent.TrackSubscribed, (track: RemoteTrack) => {
-        if (track.kind === Track.Kind.Audio) { audioRef.current?.appendChild(track.attach()); listen(track.mediaStreamTrack); }
+        if (track.kind === Track.Kind.Audio) audioRef.current?.appendChild(track.attach());
+      });
+      room.on(RoomEvent.AudioPlaybackStatusChanged, () => { if (!room.canPlaybackAudio) void room.startAudio().catch(() => {}); });
+      // Live captions, so callers can see they were heard.
+      const who = (identity?: string) => (identity === room.localParticipant.identity ? "you" : "agent");
+      room.on(RoomEvent.TranscriptionReceived, (segments, participant) => {
+        const text = segments.map((x) => x.text).join(" ").trim();
+        if (text) setCaption({ who: who(participant?.identity), text });
+      });
+      room.registerTextStreamHandler("lk.transcription", async (reader, { identity }) => {
+        let text = "";
+        for await (const chunk of reader) { text += chunk; setCaption({ who: who(identity), text: text.trim() }); }
       });
       room.on(RoomEvent.ActiveSpeakersChanged, (speakers) => {
         setAgentSpeaking(speakers.some((p) => p.identity !== room.localParticipant.identity));
@@ -81,11 +96,10 @@ export function CallWidget() {
       room.on(RoomEvent.Disconnected, () => { setState("ended"); setAgentSpeaking(false); stopMeter(); });
 
       await room.connect(data.connectionUrl, data.token);
-      // Mic on first, so the agent hears the caller from the very first word.
-      const mic = await room.localParticipant.setMicrophoneEnabled(true, { echoCancellation: true, noiseSuppression: true, autoGainControl: true });
       await room.startAudio();
-      if (mic?.track?.mediaStreamTrack) listen(mic.track.mediaStreamTrack);
       setState("live");
+      const mic = await room.localParticipant.setMicrophoneEnabled(true, { echoCancellation: true, noiseSuppression: true, autoGainControl: true });
+      if (mic?.track?.mediaStreamTrack) listen(mic.track.mediaStreamTrack);
     } catch (err) {
       const e = err as Error & { name?: string };
       setMessage(e.name === "NotAllowedError" ? "Microphone access was blocked. Allow it in your browser and try again." : e.message);
@@ -111,6 +125,7 @@ export function CallWidget() {
           <div ref={orbRef} className={`call-orb${agentSpeaking ? " speaking" : ""}`} aria-hidden="true" />
           <div ref={waveRef} className="wave" aria-hidden="true">{Array.from({ length: 12 }, (_, i) => <i key={i} />)}</div>
           <p className="call-status" aria-live="polite">{agentSpeaking ? "Assistant is speaking…" : "Listening…"} · {mmss}</p>
+          {caption && <p className="call-caption"><b>{caption.who === "you" ? "You" : "Assistant"}:</b> {caption.text}</p>}
           <div className="call-actions">
             <button type="button" className="btn-secondary call-mute" onClick={toggleMute}>{muted ? "Unmute" : "Mute"}</button>
             <button type="button" className="btn-coral" onClick={hangUp}>End call</button>
