@@ -6,7 +6,6 @@ const LINKS = [
   { href: "/calls", label: "Enquiries" },
   { href: "/review", label: "Review queue" },
   { href: "/costs", label: "Costs" },
-  { href: "/call", label: "Call page ↗", external: true },
 ];
 
 export function NavLinks() {
@@ -14,8 +13,7 @@ export function NavLinks() {
   return (
     <>
       {LINKS.map((l) => (
-        <Link key={l.href} href={l.href} target={l.external ? "_blank" : undefined}
-          className={!l.external && (path === l.href || path.startsWith(`${l.href}/`)) ? "active" : undefined}>
+        <Link key={l.href} href={l.href} className={path === l.href || path.startsWith(`${l.href}/`) ? "active" : undefined}>
           {l.label}
         </Link>
       ))}
