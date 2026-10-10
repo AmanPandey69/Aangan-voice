@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { Room, RoomEvent, Track, type RemoteTrack } from "livekit-client";
+import { createLocalAudioTrack, Room, RoomEvent, Track, type RemoteTrack } from "livekit-client";
 
 type State = "idle" | "connecting" | "live" | "ended" | "error";
 
@@ -10,6 +10,7 @@ export function CallWidget() {
   const [muted, setMuted] = useState(false);
   const [agentSpeaking, setAgentSpeaking] = useState(false);
   const [seconds, setSeconds] = useState(0);
+  const [diag, setDiag] = useState<string | null>(null);
   const [caption, setCaption] = useState<{ who: "agent" | "you"; text: string } | null>(null);
   const roomRef = useRef<Room | null>(null);
   const audioRef = useRef<HTMLDivElement>(null);
@@ -62,11 +63,11 @@ export function CallWidget() {
   useEffect(() => () => { void roomRef.current?.disconnect(); stopMeter(); }, []);
 
   async function start() {
-    setState("connecting"); setMessage(null); setSeconds(0); setCaption(null);
+    setState("connecting"); setMessage(null); setSeconds(0); setCaption(null); setDiag(null);
     try {
-      // Ask for the microphone first so the browser prompt appears straight away.
-      const probe = await navigator.mediaDevices.getUserMedia({ audio: true });
-      probe.getTracks().forEach((t) => t.stop());
+      // Get the microphone ready first (the browser prompt appears straight away),
+      // so it is published the moment we join and the agent hears every word.
+      const micTrack = await createLocalAudioTrack({ echoCancellation: true, noiseSuppression: true, autoGainControl: true });
 
       const res = await fetch("/api/call/start", { method: "POST" });
       const data = await res.json();
@@ -93,13 +94,31 @@ export function CallWidget() {
       room.on(RoomEvent.ActiveSpeakersChanged, (speakers) => {
         setAgentSpeaking(speakers.some((p) => p.identity !== room.localParticipant.identity));
       });
-      room.on(RoomEvent.Disconnected, () => { setState("ended"); setAgentSpeaking(false); stopMeter(); });
+      room.on(RoomEvent.Disconnected, () => { setState("ended"); setAgentSpeaking(false); stopMeter(); micTrack.stop(); });
+      // Short connection log, shown if the call drops, to tell us why.
+      const t0 = Date.now(), log: string[] = [];
+      const note = (e: string) => { log.push(`${Math.round((Date.now() - t0) / 1000)}s ${e}`); console.info("[call]", e); };
+      room.on(RoomEvent.Reconnecting, () => note("reconnecting"));
+      room.on(RoomEvent.Reconnected, () => note("reconnected"));
+      room.on(RoomEvent.SignalReconnecting, () => note("signal-reconnecting"));
+      room.on(RoomEvent.MediaDevicesError, (e) => note(`mic-error ${e.name}`));
+      room.on(RoomEvent.LocalTrackUnpublished, () => note("mic-unpublished"));
+      // If the assistant leaves, the call is over: don't sit on "Listening…".
+      room.on(RoomEvent.ParticipantDisconnected, () => {
+        if (room.remoteParticipants.size > 0) return;
+        note("assistant-left");
+        setDiag(log.join(" · "));
+        setMessage("The call was disconnected. Please tap “Call again”.");
+        void room.disconnect();
+      });
 
       await room.connect(data.connectionUrl, data.token);
+      note("connected");
+      await room.localParticipant.publishTrack(micTrack, { source: Track.Source.Microphone });
+      note("mic-on");
       await room.startAudio();
       setState("live");
-      const mic = await room.localParticipant.setMicrophoneEnabled(true, { echoCancellation: true, noiseSuppression: true, autoGainControl: true });
-      if (mic?.track?.mediaStreamTrack) listen(mic.track.mediaStreamTrack);
+      listen(micTrack.mediaStreamTrack);
     } catch (err) {
       const e = err as Error & { name?: string };
       setMessage(e.name === "NotAllowedError" ? "Microphone access was blocked. Allow it in your browser and try again." : e.message);
@@ -110,8 +129,9 @@ export function CallWidget() {
 
   async function hangUp() { await roomRef.current?.disconnect(); stopMeter(); setState("ended"); }
   async function toggleMute() {
-    const room = roomRef.current; if (!room) return;
-    await room.localParticipant.setMicrophoneEnabled(muted);
+    const pub = roomRef.current?.localParticipant.getTrackPublication(Track.Source.Microphone);
+    if (!pub) return;
+    if (muted) await pub.unmute(); else await pub.mute();
     setMuted(!muted);
   }
 
@@ -138,6 +158,7 @@ export function CallWidget() {
           </button>
           {state === "ended" && <p className="call-status">Thanks for calling Aangan Studio. If you booked a consultation, you&apos;ll hear from your designer soon.</p>}
           {message && <p className="call-error" role="alert">{message}</p>}
+          {diag && <p className="call-diag">{diag}</p>}
         </>
       )}
     </div>
