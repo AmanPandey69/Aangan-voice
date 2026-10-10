@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { services } from "@/lib/container";
-import { MEDIA, roomPhoto } from "@/config/media";
-import { CountUp } from "@/app/fx/count-up";
+import { roomPhoto } from "@/config/media";
 import { propertyLabel } from "@/lib/handoff/email";
 import { telHref } from "@/lib/handoff/brief";
 import type { BookingRow, CallRow, LeadRow, ReviewReason } from "@/lib/db/types";
-import { fitScore, glance, needsFollowUp, type Glance } from "@/lib/insights";
+import { fitScore, glance, needsFollowUp, pulse, type Glance, type Pulse } from "@/lib/insights";
 import { ScoreRing } from "@/app/ui";
 
 export const dynamic = "force-dynamic";
@@ -21,14 +20,6 @@ const whenPhrase = (iso: string) => {
   const d = dayLabel(iso);
   return `${d === "Today" || d === "Tomorrow" ? d.toLowerCase() : `on ${d}`} at ${time(iso)}`;
 };
-const ICON = {
-  phone: <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" />,
-  check: <path d="m5 12 4.5 4.5L19 7" />,
-  cal: <><rect x="4" y="5" width="16" height="15" rx="2.5" /><path d="M8 3v4M16 3v4M4 10h16" /></>,
-};
-const Ico = ({ d }: { d: keyof typeof ICON }) => (
-  <span className="ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{ICON[d]}</svg></span>
-);
 const ago = (iso: string) => {
   const m = Math.round((Date.now() - Date.parse(iso)) / 60000);
   return m < 1 ? "just now" : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`;
@@ -49,19 +40,19 @@ const PRIORITY: ReviewReason[] = ["escalation", "needs_manual_booking", "unackno
 export default async function TodayPage() {
   const s = services();
   const now = new Date();
-  const monthKey = istDay(now).slice(0, 7);
-  const monthStart = new Date(`${monthKey}-01T00:00:00+05:30`);
-  const [bookings, monthBookings, leads, calls] = await Promise.all([
+  const since = new Date(now.getTime() - 31 * 864e5).toISOString();
+  const [bookings, leads, calls, notifications] = await Promise.all([
     s.repo.listBookings(new Date(now.getTime() - 2 * 3600e3).toISOString(), new Date(now.getTime() + 14 * 864e5).toISOString()),
-    s.repo.listBookings(monthStart.toISOString(), new Date(monthStart.getTime() + 32 * 864e5).toISOString()),
     s.repo.listLeads({ limit: 500 }),
-    s.repo.listCalls({ since: new Date(now.getTime() - 31 * 864e5).toISOString(), limit: 2000 }),
+    s.repo.listCalls({ since, limit: 2000 }),
+    s.repo.listNotifications({ since }),
   ]);
   const byId = new Map(leads.map((l) => [l.id, l]));
   const g = glance(calls, leads, now);
+  const p = pulse(calls, leads, notifications, now);
   const next = bookings.find((b) => Date.parse(b.start_at) > now.getTime() - 3600e3);
   const nextLead = next?.lead_id ? byId.get(next.lead_id) : undefined;
-  const lastCall = [...calls].filter((c) => c.lead_id).sort((a, b) => Date.parse(b.started_at ?? b.created_at) - Date.parse(a.started_at ?? a.created_at))[0];
+  const recentCalls = [...calls].filter((c) => c.status !== "in_progress").sort((a, b) => Date.parse(b.started_at ?? b.created_at) - Date.parse(a.started_at ?? a.created_at)).slice(0, 4);
 
   // One "to do" list: open review items first, then good leads with no consultation.
   const todo = [
@@ -75,37 +66,34 @@ export default async function TodayPage() {
     <>
       <section className="home">
         <div className="home-text rise">
-          <div className="pill-eyebrow"><i />Call desk · {now.toLocaleDateString("en-IN", { timeZone: TZ, month: "long", year: "numeric" })}</div>
+          <div className="home-date">{now.toLocaleDateString("en-IN", { timeZone: TZ, weekday: "long", day: "numeric", month: "long" })}</div>
           <h1>Hello, <em>designer.</em></h1>
-          <p>{next
-            ? <>Your next consultation is with <b>{nextLead?.name ?? "a client"}</b> {whenPhrase(next.start_at)}.</>
-            : "No consultations booked yet. New bookings appear here the moment a caller books."}</p>
-          <div className="funnel">
-            <div className="funnel-step"><Ico d="phone" /><b><CountUp value={g.calls} /></b><small>Answered</small></div>
-            <div className="funnel-step"><Ico d="check" /><b><CountUp value={g.qualified} /></b><small>Qualified</small></div>
-            <div className="funnel-step"><Ico d="cal" /><b><CountUp value={g.booked} /></b><small>Booked</small></div>
-          </div>
-          <p className="funnel-note">Last 30 days</p>
+          {next ? (
+            <div className="next-card">
+              <span className="next-thumb" style={{ backgroundImage: `url("${roomPhoto(nextLead?.id ?? next.id, 300)}")` }} aria-hidden="true" />
+              <div className="next-body">
+                <small>Next consultation · {until(next.start_at)}</small>
+                <b>{nextLead?.name ?? "Consultation"}</b>
+                <span>{[whenPhrase(next.start_at), nextLead?.locality, nextLead ? propertyLabel(nextLead.facts) : null].filter(Boolean).join(" · ")}</span>
+              </div>
+              {nextLead && <Link className="act primary" href={`/calls/${nextLead.id}`}>Prep <span className="arrow">→</span></Link>}
+            </div>
+          ) : <p className="home-sub">No consultations booked yet. New bookings appear here the moment a caller books.</p>}
           <div className="actions">
-            <Link className="act primary" href="/calendar">Upcoming consultations <span className="arrow">→</span></Link>
+            <Link className="act" href="/calendar">Calendar</Link>
             <Link className="act" href="/calls?show=followup">↻ Follow up</Link>
+            <Link className="act" href="/calls">All enquiries</Link>
           </div>
         </div>
-
-        <div className="home-visual rise" style={{ ["--i" as string]: 2 }}>
-          <div className="home-photo">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={MEDIA.studioPoster} alt="" aria-hidden="true" />
-            <video autoPlay muted loop playsInline poster={MEDIA.studioPoster} aria-hidden="true"><source src={MEDIA.studioVideo} type="video/mp4" /></video>
-          </div>
-          {lastCall && <LastCall call={lastCall} lead={byId.get(lastCall.lead_id!)} />}
-          <MiniCal now={now} bookings={monthBookings} leads={leads} />
-        </div>
+        <CallLog calls={recentCalls} byId={byId} />
       </section>
+
+      <StudioPulse p={p} />
 
       <div className="home-lists">
         <section className="panel reveal">
           <div className="panel-head"><h2>Coming up</h2><Link href="/calendar">Calendar <span className="arrow">→</span></Link></div>
+          <WeekStrip now={now} bookings={bookings} />
           {bookings.length === 0 ? <p className="muted">Nothing booked yet.</p> : bookings.slice(0, 4).map((b) => {
             const l = b.lead_id ? byId.get(b.lead_id) : undefined;
             return (
@@ -138,46 +126,76 @@ export default async function TodayPage() {
   );
 }
 
-/** The most recent call, with a live voice wave. */
-function LastCall({ call, lead }: { call: CallRow; lead?: LeadRow }) {
-  const at = call.started_at ?? call.created_at;
+const fmtDur = (sec: number) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
+const until = (iso: string) => {
+  const m = Math.round((Date.parse(iso) - Date.now()) / 60000);
+  return m <= 0 ? "now" : m < 60 ? `in ${m} min` : m < 1440 ? `in ${Math.round(m / 60)} h` : `in ${Math.round(m / 1440)} days`;
+};
+/** A stable, call-specific waveform (decorative). */
+function waveform(id: string, n = 28) {
+  let h = 7;
+  return Array.from({ length: n }, (_, i) => { for (const ch of id + i) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return 0.2 + ((h % 1000) / 1000) * 0.8; });
+}
+
+/** The last few calls as a log, each with its own waveform; the newest one moves. */
+function CallLog({ calls, byId }: { calls: CallRow[]; byId: Map<string, LeadRow> }) {
   return (
-    <Link href={lead ? `/calls/${lead.id}` : "/calls"} className="float-card last-call">
-      <span className="lc-avatar" aria-hidden="true">{(lead?.name ?? "?").slice(0, 1).toUpperCase()}</span>
-      <span className="lc-body">
-        <small>Last call · {ago(at)}</small>
-        <b>{lead?.name ?? "Unknown caller"}</b>
-        <span className="lc-meta">
-          <span className={`badge badge-${lead?.verdict ?? "pending"}`}>{lead?.verdict ?? "pending"}</span>
-          {lead?.locality && <span className="muted">{lead.locality}</span>}
-        </span>
-      </span>
-      <span className="wave-bars" aria-hidden="true">{Array.from({ length: 5 }, (_, i) => <i key={i} />)}</span>
-    </Link>
+    <section className="call-log rise" style={{ ["--i" as string]: 2 }}>
+      <div className="call-log-head"><span className="live-dot" />Call log<Link href="/calls">All <span className="arrow">→</span></Link></div>
+      {calls.length === 0 ? <p className="muted">No calls yet.</p> : calls.map((c, i) => {
+        const l = c.lead_id ? byId.get(c.lead_id) : undefined;
+        return (
+          <Link key={c.id} href={l ? `/calls/${l.id}` : "/calls"} className={`log-row${i === 0 ? " latest" : ""}`}>
+            <span className="log-top">
+              <b>{l?.name ?? "Unknown caller"}</b>
+              <span className={`badge badge-${l?.verdict ?? "pending"}`}>{l?.verdict ?? "pending"}</span>
+              <small>{ago(c.started_at ?? c.created_at)}</small>
+            </span>
+            <span className="log-wave" aria-hidden="true">{waveform(c.id).map((v, k) => <i key={k} style={{ ["--v" as string]: v, animationDelay: `${-k * 0.07}s` }} />)}</span>
+            <span className="log-meta"><span>{fmtDur(c.duration_sec)}</span><span>{l?.locality ?? "Area not stated"}</span></span>
+          </Link>
+        );
+      })}
+    </section>
   );
 }
 
-/** This month: booked days filled, today outlined, days with new enquiries dotted. */
-function MiniCal({ now, bookings, leads }: { now: Date; bookings: BookingRow[]; leads: LeadRow[] }) {
-  const todayKey = istDay(now), [y, m] = todayKey.split("-").map(Number);
-  const first = new Date(Date.UTC(y, m - 1, 1)), days = new Date(Date.UTC(y, m, 0)).getUTCDate();
-  const lead = (first.getUTCDay() + 6) % 7; // Monday first
-  const booked = new Set(bookings.map((b) => istDay(new Date(b.start_at))));
-  const enquiries = new Set(leads.map((l) => istDay(new Date(l.first_seen_at))));
-  const key = (d: number) => `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-  const monthCalls = [...enquiries].filter((k) => k.startsWith(todayKey.slice(0, 7))).length;
+/** Six numbers about how the studio runs, not just how many people called. */
+function StudioPulse({ p }: { p: Pulse }) {
+  const hour = (h: number) => `${((h + 11) % 12) + 1}${h < 12 ? "am" : "pm"}`;
+  const items: [string, string, string][] = [
+    ["Average call", p.avgCallSec == null ? "–" : fmtDur(p.avgCallSec), "minutes on the phone"],
+    ["Brief to designer", p.handoffMin == null ? "–" : p.handoffMin < 1 ? "< 1 min" : `${Math.round(p.handoffMin)} min`, "after the call ends"],
+    ["Acknowledged", p.ackRate == null ? "–" : `${Math.round(p.ackRate * 100)}%`, "of handoff emails"],
+    ["Top area", p.topArea?.name ?? "–", p.topArea ? `${p.topArea.count} enquir${p.topArea.count === 1 ? "y" : "ies"}` : "no areas yet"],
+    ["Busiest time", p.busiestHour == null ? "–" : `${hour(p.busiestHour)}–${hour((p.busiestHour + 1) % 24)}`, "most calls come in"],
+    ["Called back", String(p.repeatCallers), p.repeatCallers === 1 ? "person called again" : "people called again"],
+  ];
   return (
-    <Link href="/calendar" className="float-card mini-cal" aria-label="Open the calendar">
-      <div className="mc-head"><b>{first.toLocaleDateString("en-IN", { month: "long", timeZone: "UTC" })}</b><small><i className="dot" style={{ background: "var(--brand)" }} />{booked.size} booked · {monthCalls} enquiry days</small></div>
-      <div className="mc-grid">
-        {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => <span key={`h${i}`} className="mc-dow">{d}</span>)}
-        {Array.from({ length: lead }, (_, i) => <span key={`e${i}`} />)}
-        {Array.from({ length: days }, (_, i) => {
-          const k = key(i + 1);
-          return <span key={k} className={["mc-day", booked.has(k) && "booked", k === todayKey && "today", enquiries.has(k) && "enq"].filter(Boolean).join(" ")}>{i + 1}</span>;
-        })}
-      </div>
-    </Link>
+    <section className="pulse reveal" aria-label="Studio pulse, last 30 days">
+      <div className="pulse-label">Studio pulse<small>last 30 days</small></div>
+      {items.map(([k, v, sub]) => <div className="pulse-item" key={k}><small>{k}</small><b>{v}</b><span>{sub}</span></div>)}
+    </section>
+  );
+}
+
+/** Seven days from today, with a dot for each consultation. */
+function WeekStrip({ now, bookings }: { now: Date; bookings: BookingRow[] }) {
+  const days = Array.from({ length: 7 }, (_, i) => new Date(now.getTime() + i * 864e5));
+  const count = (d: Date) => bookings.filter((b) => istDay(new Date(b.start_at)) === istDay(d)).length;
+  return (
+    <div className="week">
+      {days.map((d, i) => {
+        const n = count(d);
+        return (
+          <div key={i} className={`week-day${i === 0 ? " today" : ""}${n ? " has" : ""}`}>
+            <small>{d.toLocaleDateString("en-IN", { timeZone: TZ, weekday: "short" })}</small>
+            <b>{d.toLocaleDateString("en-IN", { timeZone: TZ, day: "numeric" })}</b>
+            <span>{Array.from({ length: Math.min(n, 3) }, (_, k) => <i key={k} />)}</span>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 

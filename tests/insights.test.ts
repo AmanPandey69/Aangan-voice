@@ -45,3 +45,20 @@ describe("insights", () => {
     expect(g.perDay.at(-1)).toEqual({ day: "2026-10-12", count: 1 });
   });
 });
+
+describe("pulse", () => {
+  it("measures call length, handoff speed, acknowledgement, top area, busy hour and repeat callers", async () => {
+    const { pulse } = await import("@/lib/insights");
+    const now = new Date("2026-10-12T12:00:00Z");
+    const c = (lead_id: string, start: string, end: string, duration_sec: number) => ({ lead_id, started_at: start, created_at: start, ended_at: end, duration_sec, status: "completed" }) as CallRow;
+    const calls = [
+      c("a", "2026-10-11T15:00:00Z", "2026-10-11T15:03:00Z", 180),
+      c("a", "2026-10-12T15:05:00Z", "2026-10-12T15:06:00Z", 60),
+      c("b", "2026-10-10T06:00:00Z", "2026-10-10T06:02:00Z", 120),
+    ];
+    const leads = [lead({ id: "a", locality: "Baner" }), lead({ id: "b", locality: "Baner" })];
+    const n = (lead_id: string, sent_at: string, ack: boolean, kind = "handoff") => ({ lead_id, sent_at, kind, acknowledged_at: ack ? sent_at : null }) as never;
+    const p = pulse(calls, leads, [n("a", "2026-10-11T15:05:00Z", true), n("b", "2026-10-10T06:04:00Z", false), n("b", "2026-10-10T08:00:00Z", false, "reminder")], now);
+    expect(p).toMatchObject({ avgCallSec: 120, handoffMin: 2, ackRate: 0.5, topArea: { name: "Baner", count: 2 }, repeatCallers: 1, busiestHour: 20 });
+  });
+});
