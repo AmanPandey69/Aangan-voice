@@ -14,6 +14,10 @@ export const env = {
 
   vaaniApiKey: () => e("VAANI_API_KEY"),
   vaaniWebhookSecret: () => e("VAANI_WEBHOOK_SECRET"),
+  /** Agent UUID (Vaani → Agents → open the agent; it's in the address bar). Enables the public /call page. */
+  vaaniAgentId: () => e("VAANI_AGENT_ID"),
+  /** Most internet calls the public /call page may start per day (cost guard). */
+  webCallDailyLimit: () => Number(e("WEB_CALL_DAILY_LIMIT") ?? 150),
   calcomApiKey: () => e("CALCOM_API_KEY"),
   calcomEventTypeId: () => e("CALCOM_EVENT_TYPE_ID"),
   calcomWebhookSecret: () => e("CALCOM_WEBHOOK_SECRET"),

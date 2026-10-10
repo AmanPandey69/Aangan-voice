@@ -246,3 +246,20 @@ input:hover, select:hover { border-color: rgba(23, 147, 255, .45); }
   .hero h1 { font-size: 24px; }
   .hero-inner { padding: 20px; }
 }
+
+/* ---------- public call page ---------- */
+.call-card { max-width: 440px; text-align: left; }
+.call-page.embed { background: var(--ombre); min-height: 100vh; }
+.call-page.embed::before { display: none; }
+.call-widget { display: grid; gap: 12px; justify-items: center; margin: 8px 0 14px; }
+.call-start { width: 100%; justify-content: center; padding: 15px; font-size: 17px; }
+.call-actions { display: flex; gap: 10px; width: 100%; }
+.call-actions button { flex: 1; justify-content: center; }
+.call-mute { color: #fff !important; border-color: rgba(255,255,255,.6) !important; }
+.call-status { margin: 0 !important; color: rgba(255,255,255,.9); text-align: center; font-size: 14px; }
+.call-error { margin: 0 !important; color: #ffd2c4 !important; text-align: center; font-size: 14px; }
+.call-note { font-size: 12px; margin: 4px 0 0 !important; color: rgba(255,255,255,.7) !important; }
+.call-orb { width: 96px; height: 96px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ffffff, var(--aqua) 30%, var(--brand) 70%, var(--brand-deep)); box-shadow: 0 0 0 0 rgba(94, 234, 212, .5); transition: transform .2s ease; }
+.call-orb.speaking { animation: call-pulse 1.2s ease-out infinite; transform: scale(1.06); }
+@keyframes call-pulse { 0% { box-shadow: 0 0 0 0 rgba(94, 234, 212, .55); } 100% { box-shadow: 0 0 0 26px rgba(94, 234, 212, 0); } }
+@media (prefers-reduced-motion: reduce) { .call-orb.speaking { animation: none; } }
