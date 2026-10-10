@@ -46,19 +46,19 @@ export default async function TodayPage() {
     .filter((l) => !l.review_resolved_at && l.review_reasons.some((r) => NEED_TEXT[r]))
     .map((l) => ({ l, r: PRIORITY.find((p) => l.review_reasons.includes(p))! }))
     .sort((a, b) => PRIORITY.indexOf(a.r) - PRIORITY.indexOf(b.r));
-  const fresh = leads.filter((l) => l.verdict).slice(0, 4);
+  const fresh = leads.filter((l) => l.verdict).slice(0, 8);
 
   return (
     <>
       <section className="vhero rise">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={MEDIA.loginPoster} alt="" aria-hidden="true" />
-        <video autoPlay muted loop playsInline poster={MEDIA.loginPoster} aria-hidden="true"><source src={MEDIA.loginVideo} type="video/mp4" /></video>
+        <img src={MEDIA.studioPoster} alt="" aria-hidden="true" />
+        <video autoPlay muted loop playsInline poster={MEDIA.studioPoster} aria-hidden="true"><source src={MEDIA.studioVideo} type="video/mp4" /></video>
         <div className="vhero-inner">
           <div>
             <div className="hero-eyebrow">{now.toLocaleDateString("en-IN", { timeZone: TZ, weekday: "long", day: "numeric", month: "long" })}</div>
-            <h1>{greeting()}, Aangan Studio</h1>
-            <p>Here&apos;s what your day looks like.</p>
+            <h1>{greeting()}.</h1>
+            <p>Your consultations, the people waiting on you, and who called. Nothing else.</p>
           </div>
           <div className="kpis">
             <div className="kpi"><b><CountUp value={todayCount} /></b><span>consultations today</span></div>
@@ -68,9 +68,9 @@ export default async function TodayPage() {
         </div>
       </section>
 
-      <div className="section-title rise" style={{ ["--i" as string]: 1 }}><h2>Consultations: next 7 days</h2><Link href="/calendar">Open calendar →</Link></div>
+      <div className="section-title reveal"><h2>Coming up</h2><Link href="/calendar">Calendar <span className="arrow">→</span></Link></div>
       {bookings.length === 0 ? (
-        <div className="empty-state rise" style={{ ["--i" as string]: 2 }}>No consultations booked yet. New bookings appear here automatically.</div>
+        <div className="empty-state reveal">No consultations booked yet. New bookings appear here automatically.</div>
       ) : (
         <div className="agenda">
           {bookings.slice(0, 6).map((b, i) => {
@@ -80,25 +80,25 @@ export default async function TodayPage() {
         </div>
       )}
 
-      <div className="section-title rise" style={{ ["--i" as string]: 3 }}><h2>Needs you</h2><Link href="/review">Review queue →</Link></div>
+      <div className="section-title reveal"><h2>Needs you</h2><Link href="/review">Review queue <span className="arrow">→</span></Link></div>
       {needs.length === 0 ? (
-        <div className="empty-state rise" style={{ ["--i" as string]: 4 }}>All clear. Nothing needs a person right now. 🎉</div>
+        <div className="empty-state reveal">All clear. Nothing needs a person right now.</div>
       ) : (
         <div className="needs">
           {needs.slice(0, 4).map(({ l, r }, i) => (
-            <Link key={l.id} href={`/calls/${l.id}`} className="need rise" style={{ ["--i" as string]: i + 4 }}>
+            <Link key={l.id} href={`/calls/${l.id}`} className="need reveal" style={{ transitionDelay: `${i * 70}ms` }}>
               <span className="dot" style={{ background: NEED_TEXT[r]![1] }} />
               <span><b>{l.name ?? "Unknown caller"}</b><small>{NEED_TEXT[r]![0]}{l.locality ? ` · ${l.locality}` : ""}</small></span>
-              <span className="go">Open →</span>
+              <span className="go">Open <span className="arrow">→</span></span>
             </Link>
           ))}
         </div>
       )}
 
-      <div className="section-title rise" style={{ ["--i" as string]: 6 }}><h2>Latest enquiries</h2><Link href="/calls">All enquiries →</Link></div>
-      <div className="photo-grid">
-        {fresh.map((l, i) => (
-          <Link key={l.id} href={`/calls/${l.id}`} className="photo-card glow tilt rise" style={{ ["--i" as string]: i + 7 }}>
+      <div className="section-title reveal"><h2>Latest enquiries</h2><span className="rail-hint">Drag to browse ⟷</span></div>
+      <div className="rail reveal">
+        {fresh.map((l) => (
+          <Link key={l.id} href={`/calls/${l.id}`} className="photo-card" draggable={false}>
             <div className="ph" style={{ backgroundImage: `url("${roomPhoto(l.id)}")` }}>
               <span className={`badge badge-${l.verdict ?? "pending"}`} style={{ background: "#fff" }}>{l.verdict ?? "pending"}</span>
             </div>
@@ -113,7 +113,7 @@ export default async function TodayPage() {
 function AgendaItem({ start, lead, i }: { start: string; lead?: LeadRow; i: number }) {
   const tel = lead ? telHref(lead) : null, wa = lead ? whatsappHref(lead) : null;
   return (
-    <div className="agenda-item rise" style={{ ["--i" as string]: i + 2 }}>
+    <div className="agenda-item reveal" style={{ transitionDelay: `${i * 70}ms` }}>
       <div className="agenda-time"><b>{time(start)}</b><span>{dayLabel(start)}</span></div>
       <div>
         <h3>{lead?.name ?? "Consultation"}</h3>
@@ -122,7 +122,7 @@ function AgendaItem({ start, lead, i }: { start: string; lead?: LeadRow; i: numb
       <div className="actions">
         {tel && <a className="act" href={tel}>📞 Call</a>}
         {wa && <a className="act wa" href={wa} target="_blank" rel="noreferrer">💬 WhatsApp</a>}
-        {lead && <Link className="act primary" href={`/calls/${lead.id}`}>Prep →</Link>}
+        {lead && <Link className="act primary" href={`/calls/${lead.id}`}>Prep <span className="arrow">→</span></Link>}
       </div>
     </div>
   );

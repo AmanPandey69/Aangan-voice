@@ -8,20 +8,21 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const configured = Boolean(process.env.DASHBOARD_PASSWORD);
   return (
     <main className="login">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img className="login-poster" src={MEDIA.loginPoster} alt="" aria-hidden="true" />
-      <video className="login-video" autoPlay muted loop playsInline preload="auto" poster={MEDIA.loginPoster} aria-hidden="true">
-        <source src={MEDIA.loginVideo} type="video/mp4" />
-      </video>
-      <div className="login-card">
-        <div className="brand"><span className="brand-mark">A</span> Aangan Studio</div>
-        <h1>Enquiry studio</h1>
-        <p>Every call, verdict and consultation in one place.</p>
-        {configured ? <LoginForm next={next ?? "/today"} /> : (
-          <p>DASHBOARD_PASSWORD is not set. Set it in the environment to enable sign-in.</p>
-        )}
+      <div className="login-media" aria-hidden="true">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={MEDIA.loginPoster} alt="" />
+        <video autoPlay muted loop playsInline poster={MEDIA.loginPoster}><source src={MEDIA.loginVideo} type="video/mp4" /></video>
+        <div className="login-quote">Every home starts with a conversation.</div>
       </div>
-      <div className="login-foot">Video: <a href="https://mixkit.co/" target="_blank" rel="noreferrer">Mixkit</a></div>
+      <div className="login-side">
+        <div className="login-card rise">
+          <div className="brand"><span className="wordmark">Aangan</span><span className="wordmark-sub">Studio</span></div>
+          <h1>Welcome back.</h1>
+          <p>Sign in to see today&apos;s consultations and enquiries.</p>
+          {configured ? <LoginForm next={next ?? "/today"} /> : <p>DASHBOARD_PASSWORD is not set. Set it in the environment to enable sign-in.</p>}
+          <div className="login-foot">Video: <a href="https://mixkit.co/" target="_blank" rel="noreferrer">Mixkit</a></div>
+        </div>
+      </div>
     </main>
   );
 }

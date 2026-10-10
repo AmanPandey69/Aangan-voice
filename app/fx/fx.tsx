@@ -1,41 +1,65 @@
 "use client";
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 
 /**
- * One delegated pointer listener for the whole dashboard:
- *  .glow  → light follows the cursor (--mx/--my)
- *  .tilt  → gentle 3D tilt (--rx/--ry)
- *  .hero  → photo drifts with the cursor (parallax)
- * Does nothing for people who prefer reduced motion.
+ * Page motion for the dashboard:
+ *  - html.scrolled once the page moves (the floating nav tightens)
+ *  - hero photos/videos drift slower than the page (parallax)
+ *  - .reveal sections fade up as they scroll into view
+ *  - .rail rows can be dragged sideways with the mouse
+ * Nothing moves for people who prefer reduced motion.
  */
 export function FX() {
+  const path = usePathname();
+
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const root = document.documentElement;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    root.classList.add("fx");
+
     let raf = 0;
-    let last: { glow?: HTMLElement; tilt?: HTMLElement } = {};
-    const onMove = (e: PointerEvent) => {
+    const onScroll = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
-        const t = e.target as HTMLElement | null;
-        const glow = t?.closest<HTMLElement>(".glow") ?? undefined;
-        const tilt = t?.closest<HTMLElement>(".tilt") ?? undefined;
-        const hero = t?.closest<HTMLElement>(".hero") ?? undefined;
-        if (last.tilt && last.tilt !== tilt) { last.tilt.style.setProperty("--rx", "0deg"); last.tilt.style.setProperty("--ry", "0deg"); }
-        for (const el of [glow, tilt, hero]) {
-          if (!el) continue;
-          const r = el.getBoundingClientRect();
-          const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
-          if (el === glow) { el.style.setProperty("--mx", `${x * 100}%`); el.style.setProperty("--my", `${y * 100}%`); }
-          if (el === tilt) { el.style.setProperty("--rx", `${(0.5 - y) * 6}deg`); el.style.setProperty("--ry", `${(x - 0.5) * 8}deg`); }
-          if (el === hero) el.style.backgroundPosition = `${50 + (x - 0.5) * 6}% ${50 + (y - 0.5) * 6}%`;
-        }
-        last = { glow, tilt };
+        root.classList.toggle("scrolled", window.scrollY > 24);
+        if (reduce) return;
+        document.querySelectorAll<HTMLElement>(".hero, .vhero").forEach((h) => {
+          const r = h.getBoundingClientRect();
+          if (r.bottom < 0 || r.top > innerHeight) return;
+          h.style.setProperty("--py", `${Math.round(-r.top * 0.18)}px`);
+        });
       });
     };
-    const onLeave = () => { if (last.tilt) { last.tilt.style.setProperty("--rx", "0deg"); last.tilt.style.setProperty("--ry", "0deg"); } };
-    document.addEventListener("pointermove", onMove, { passive: true });
-    document.addEventListener("pointerleave", onLeave);
-    return () => { document.removeEventListener("pointermove", onMove); document.removeEventListener("pointerleave", onLeave); cancelAnimationFrame(raf); };
-  }, []);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
+    document.querySelectorAll(".reveal:not(.in)").forEach((el) => (reduce ? el.classList.add("in") : io.observe(el)));
+
+    const cleanups: (() => void)[] = [];
+    document.querySelectorAll<HTMLElement>(".rail").forEach((rail) => {
+      let down = false, startX = 0, startLeft = 0, moved = false;
+      const onDown = (e: PointerEvent) => { if (e.pointerType !== "mouse") return; down = true; moved = false; startX = e.clientX; startLeft = rail.scrollLeft; };
+      const onMove = (e: PointerEvent) => {
+        if (!down) return;
+        const dx = e.clientX - startX;
+        if (Math.abs(dx) > 4) { moved = true; rail.classList.add("dragging"); }
+        rail.scrollLeft = startLeft - dx;
+      };
+      const onUp = () => { down = false; setTimeout(() => rail.classList.remove("dragging"), 0); };
+      const onClick = (e: MouseEvent) => { if (moved) { e.preventDefault(); e.stopPropagation(); } };
+      rail.addEventListener("pointerdown", onDown);
+      window.addEventListener("pointermove", onMove);
+      window.addEventListener("pointerup", onUp);
+      rail.addEventListener("click", onClick, true);
+      cleanups.push(() => { rail.removeEventListener("pointerdown", onDown); window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onUp); rail.removeEventListener("click", onClick, true); });
+    });
+
+    return () => { window.removeEventListener("scroll", onScroll); cancelAnimationFrame(raf); io.disconnect(); cleanups.forEach((c) => c()); };
+  }, [path]);
+
   return null;
 }

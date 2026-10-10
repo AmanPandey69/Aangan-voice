@@ -21,9 +21,8 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   }));
   return (
     <div className="shell">
-      <div className="aurora" aria-hidden="true"><span /><span /><span /></div>
       <header className="topbar">
-        <Link href="/today" className="brand"><span className="brand-mark">A</span> Aangan Studio</Link>
+        <Link href="/today" className="brand"><span className="wordmark">Aangan</span><span className="wordmark-sub">Studio</span></Link>
         <nav>
           <NavLinks />
           <PaletteTrigger />

@@ -17,13 +17,19 @@ export const fmtDate = (iso: string | null | undefined) => iso
 
 export const fmtDuration = (sec: number) => `${Math.floor(sec / 60)}m ${String(sec % 60).padStart(2, "0")}s`;
 
-/** Page header: interior photo under a teal → aqua ombre, title, subtitle and optional quick stats. */
-export function Hero({ image, eyebrow, title, subtitle, stats, compact, children }: {
-  image?: string; eyebrow?: string; title: ReactNode; subtitle?: ReactNode;
+/** Page header: full-bleed photo or video, serif headline, quiet stats. */
+export function Hero({ image, video, eyebrow, title, subtitle, stats, compact, children }: {
+  image?: string; video?: string; eyebrow?: string; title: ReactNode; subtitle?: ReactNode;
   stats?: { label: string; value: ReactNode }[]; compact?: boolean; children?: ReactNode;
 }) {
   return (
-    <section className={`hero rise${compact ? " compact" : ""}${image ? "" : " plain"}`} style={image ? { backgroundImage: `url("${image}")` } : undefined}>
+    <section className={`hero rise${compact ? " compact" : ""}${image || video ? "" : " plain"}`}>
+      {video ? (
+        <video className="hero-media" autoPlay muted loop playsInline poster={image} aria-hidden="true"><source src={video} type="video/mp4" /></video>
+      ) : image ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img className="hero-media" src={image} alt="" aria-hidden="true" />
+      ) : null}
       <div className="hero-inner">
         <div>
           {eyebrow && <div className="hero-eyebrow">{eyebrow}</div>}

@@ -10,7 +10,7 @@ export function LoginForm({ next }: { next: string }) {
       <label htmlFor="password">Password</label>
       <input id="password" name="password" type="password" autoComplete="current-password" required autoFocus />
       {state?.error && <p className="error" role="alert">{state.error}</p>}
-      <button type="submit" disabled={pending}>{pending ? "Signing in…" : "Sign in"}</button>
+      <button type="submit" disabled={pending}>{pending ? "Signing in…" : <>Sign in <span className="arrow">→</span></>}</button>
     </form>
   );
 }

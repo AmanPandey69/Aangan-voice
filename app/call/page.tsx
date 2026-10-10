@@ -17,7 +17,7 @@ export default async function CallPage({ searchParams }: { searchParams: Promise
         </>
       )}
       <div className="login-card call-card">
-        <div className="brand"><span className="brand-mark">A</span> Aangan Studio</div>
+        <div className="brand"><span className="wordmark">Aangan</span><span className="wordmark-sub">Studio</span></div>
         <h1>Talk to us about your home</h1>
         <p>Tell our assistant about your project and book a free design consultation, any time of day.</p>
         <CallWidget />

@@ -3,6 +3,8 @@
  *  - Video: Mixkit "Luxury hotel room panning shot" (#4196), Mixkit License, no attribution required.
  *    https://mixkit.co/free-stock-video/luxury-hotel-room-panning-shot-4196/
  *    720p (≈6 MB) on purpose: it sits under a colour overlay, and the 1080p file is ≈60 MB.
+ *  - Video: Mixkit "Architect choosing a color from the color plate" (#21219), Mixkit License.
+ *    https://mixkit.co/free-stock-video/architect-choosing-a-color-from-the-color-plate-21219/
  *  - Photos: Pexels License (free, no attribution required).
  *    https://www.pexels.com/photo/teal-sofa-set-and-red-rug-7587820/
  *    https://www.pexels.com/photo/interior-design-of-living-room-20390760/
@@ -23,6 +25,8 @@ export function roomPhoto(seed: string, w = 800): string {
 export const MEDIA = {
   loginVideo: "https://assets.mixkit.co/videos/4196/4196-720.mp4",
   loginPoster: "https://assets.mixkit.co/videos/4196/4196-thumb-720-0.jpg",
+  studioVideo: "https://assets.mixkit.co/videos/21219/21219-720.mp4",
+  studioPoster: "https://assets.mixkit.co/videos/21219/21219-thumb-720-0.jpg",
   heroEnquiries: pexels(7587820),
   heroReview: pexels(20390760),
   heroCosts: pexels(7851904),
