@@ -1,5 +1,6 @@
 import { LoginForm } from "./form";
 import { MEDIA } from "@/config/media";
+import { Logo } from "@/app/logo";
 
 export const metadata = { title: "Sign in · Aangan Studio", robots: { index: false } };
 
@@ -16,7 +17,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       </div>
       <div className="login-side">
         <div className="login-card rise">
-          <div className="brand"><span className="wordmark">Aangan</span><span className="wordmark-sub">Studio</span></div>
+          <div className="brand"><Logo /><span className="wordmark">Aangan</span><span className="wordmark-sub">Studio</span></div>
           <h1>Welcome back.</h1>
           <p>Sign in to see today&apos;s consultations and enquiries.</p>
           <ul className="login-tags" aria-label="What the assistant does">

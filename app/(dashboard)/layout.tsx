@@ -8,6 +8,7 @@ import { FX } from "@/app/fx/fx";
 import { NavLinks } from "@/app/fx/nav";
 import { CommandPalette, PaletteTrigger, type PaletteItem } from "@/app/fx/palette";
 import { displayPhone } from "@/lib/phone";
+import { Logo } from "@/app/logo";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   return (
     <div className="shell">
       <header className="topbar">
-        <Link href="/today" className="brand"><span className="wordmark">Aangan</span><span className="wordmark-sub">Studio</span></Link>
+        <Link href="/today" className="brand"><Logo /><span className="wordmark">Aangan</span><span className="wordmark-sub">Studio</span></Link>
         <nav>
           <NavLinks />
           <PaletteTrigger />
