@@ -178,7 +178,7 @@ function AtAGlance({ g }: { g: Glance }) {
       <div className={`glance-card${g.priceLeaks ? " alert" : ""}`}>
         <div className="tile-label">Price questions</div>
         <div className="glance-big">{g.priceAsked}<small> asked · {g.priceLeaks} quoted</small></div>
-        <p>{g.priceLeaks ? <Link href="/review">Check {g.priceLeaks} call{g.priceLeaks > 1 ? "s" : ""} in the review queue →</Link> : "Every one was steered to the consultation. No number was ever said."}</p>
+        <p>{g.priceLeaks ? <Link href="/review">Check {g.priceLeaks} call{g.priceLeaks > 1 ? "s" : ""} in the review queue →</Link> : g.priceAsked ? "Every one was steered to the consultation. No number was ever said." : "Nobody asked yet. If they do, the assistant offers the consultation, never a number."}</p>
       </div>
     </div>
   );

@@ -61,7 +61,7 @@ export function ScoreRing({ score, size = 36 }: { score: number | null; size?: n
         <circle cx="18" cy="18" r={r} className="track" />
         <circle cx="18" cy="18" r={r} className="bar" strokeDasharray={len} strokeDashoffset={len * (1 - score / 100)} />
       </svg>
-      <b>{score}</b>
+      <b style={{ fontSize: Math.round(size * 0.28) }}>{score}</b>
     </span>
   );
 }
