@@ -1,5 +1,3 @@
-import { DISCLOSURE_LINE } from "@/lib/rules/copy";
-
 /**
  * Starts an in-browser (WebRTC) call with the Vaani agent.
  * Docs: https://docs.vaanivoice.ai/api-reference/trigger-call (medium "webrtc"), checked 2026-10-10.
@@ -12,16 +10,10 @@ export async function startVaaniWebCall(apiKey: string, agentId: string): Promis
     method: "POST",
     signal: AbortSignal.timeout(10_000),
     headers: { "X-API-Key": apiKey, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      agent_id: agentId,
-      medium: "webrtc",
-      primary_language: "en",
-      secondary_language: "hi",
-      // Always open with the AI + recording disclosure, whatever the dashboard greeting says.
-      welcome_message: DISCLOSURE_LINE,
-      welcome_interruptible: false,
-      voice_gender: "female",
-    }),
+    // No overrides: the web call uses the agent exactly as configured in Vaani
+    // (its greeting already discloses AI + recording). Overriding voice, language
+    // or the greeting left web calls stuck after the greeting.
+    body: JSON.stringify({ agent_id: agentId, medium: "webrtc" }),
   });
   if (!res.ok) throw new Error(`vaani trigger-call ${res.status}`);
   const d = (await res.json()) as { token?: string; connection_url?: string; room_name?: string };

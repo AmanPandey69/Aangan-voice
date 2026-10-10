@@ -81,8 +81,9 @@ export function CallWidget() {
       room.on(RoomEvent.Disconnected, () => { setState("ended"); setAgentSpeaking(false); stopMeter(); });
 
       await room.connect(data.connectionUrl, data.token);
+      // Mic on first, so the agent hears the caller from the very first word.
+      const mic = await room.localParticipant.setMicrophoneEnabled(true, { echoCancellation: true, noiseSuppression: true, autoGainControl: true });
       await room.startAudio();
-      const mic = await room.localParticipant.setMicrophoneEnabled(true);
       if (mic?.track?.mediaStreamTrack) listen(mic.track.mediaStreamTrack);
       setState("live");
     } catch (err) {

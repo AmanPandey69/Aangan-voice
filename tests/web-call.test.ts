@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { POST as startCall } from "@/app/api/call/start/route";
 import { freshServices } from "./helpers";
-import { DISCLOSURE_LINE } from "@/lib/rules/copy";
 
 const req = (headers: Record<string, string> = {}) =>
   new Request("https://aangan-voice.vercel.app/api/call/start", { method: "POST", headers: { origin: "https://aangan-voice.vercel.app", ...headers } });
@@ -24,7 +23,7 @@ describe("POST /api/call/start", () => {
     const [url, init] = (fetchMock.mock.calls as unknown as [string, RequestInit][])[0];
     expect(url).toBe("https://api.vaanivoice.ai/api/trigger-call/");
     expect((init.headers as Record<string, string>)["X-API-Key"]).toBe("vaani_x");
-    expect(JSON.parse(String(init.body))).toMatchObject({ agent_id: "agent-uuid", medium: "webrtc", primary_language: "en", welcome_message: DISCLOSURE_LINE });
+    expect(JSON.parse(String(init.body))).toEqual({ agent_id: "agent-uuid", medium: "webrtc" });
     for (let i = 0; i < 3; i++) await startCall(req({ "x-forwarded-for": "1.2.3.4" }));
     expect((await startCall(req({ "x-forwarded-for": "1.2.3.4" }))).status).toBe(429);
     expect((await startCall(req({ "x-forwarded-for": "5.6.7.8" }))).status).toBe(200);
