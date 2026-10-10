@@ -20,13 +20,27 @@ describe("POST /api/call/start", () => {
     vi.stubGlobal("fetch", fetchMock);
     const ok = await startCall(req({ "x-forwarded-for": "1.2.3.4" }));
     expect(await ok.json()).toEqual({ token: "tok", connectionUrl: "wss://rtc.vaanivoice.ai", roomName: "room_1" });
-    const [url, init] = (fetchMock.mock.calls as unknown as [string, RequestInit][])[0];
+    const [url, init] = (fetchMock.mock.calls as unknown as [string, RequestInit][]).find(([u]) => u.includes("trigger-call"))!;
     expect(url).toBe("https://api.vaanivoice.ai/api/trigger-call/");
     expect((init.headers as Record<string, string>)["X-API-Key"]).toBe("vaani_x");
     expect(JSON.parse(String(init.body))).toEqual({ agent_id: "agent-uuid", medium: "webrtc" });
     for (let i = 0; i < 3; i++) await startCall(req({ "x-forwarded-for": "1.2.3.4" }));
     expect((await startCall(req({ "x-forwarded-for": "1.2.3.4" }))).status).toBe(429);
     expect((await startCall(req({ "x-forwarded-for": "5.6.7.8" }))).status).toBe(200);
+  });
+
+  it("sends the agent's own experience settings with longer idle timers", async () => {
+    freshServices();
+    process.env.VAANI_API_KEY = "vaani_x"; process.env.VAANI_AGENT_ID = "agent-uuid";
+    const experience = { conversational_experience: { mood: "calm" }, settings: { call_settings: { max_call_duration: 30 }, idle_conversation_settings: { end_conversation_on_idle: true, idle_call_hangup_timeout: 10, idle_call_warning_timeout: 10, initial_idle_call_hungup_timeout: 10, initial_idle_call_warning_timeout: 3 } } };
+    const fetchMock = vi.fn(async (u: string) => new Response(JSON.stringify(u.includes("/api/agents/") ? { experience } : { token: "tok", connection_url: "wss://x" })));
+    vi.stubGlobal("fetch", fetchMock);
+    expect((await startCall(req({ "x-forwarded-for": "9.9.9.9" }))).status).toBe(200);
+    const [, init] = (fetchMock.mock.calls as unknown as [string, RequestInit][]).find(([u]) => u.includes("trigger-call"))!;
+    const sent = JSON.parse(String(init.body)).modify_agent.experience;
+    expect(sent.conversational_experience).toEqual({ mood: "calm" });
+    expect(sent.settings.call_settings).toEqual({ max_call_duration: 30 });
+    expect(sent.settings.idle_conversation_settings).toMatchObject({ end_conversation_on_idle: true, idle_call_hangup_timeout: 30, initial_idle_call_hungup_timeout: 30, initial_idle_call_warning_timeout: 15 });
   });
 
   it("rejects requests from other websites", async () => {
