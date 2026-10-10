@@ -107,7 +107,11 @@ export async function processCall(s: Services, incoming: NormalizedCall, webhook
   const verdictMismatch = Boolean(liveVerdict && liveVerdict !== ev.verdict);
 
   // A booking made by the voice platform's own Cal.com integration may have arrived before this lead existed.
-  for (const b of await repo.findUnlinkedBookings(lead.phone, facts.email ?? lead.email)) await repo.linkBooking(b.id, lead.id);
+  const callStart = Date.parse(at);
+  for (const b of await repo.findUnlinkedBookings(lead.phone, facts.email ?? lead.email)) {
+    // Only bookings made around this call (not an old booking that reused the email).
+    if (Date.parse(b.created_at) >= callStart - 3600e3) await repo.linkBooking(b.id, lead.id);
+  }
   const bookings = await repo.listBookingsForLead(lead.id);
   const active = bookings.filter((b) => b.status !== "cancelled").sort((a, b) => b.start_at.localeCompare(a.start_at))[0];
   const bookingStatus: LeadRow["booking_status"] = active ? "booked"

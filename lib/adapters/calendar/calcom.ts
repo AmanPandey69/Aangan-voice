@@ -71,7 +71,7 @@ export class CalcomCalendar implements CalendarProvider {
       triggerEvent?: string;
       payload?: {
         uid?: string; startTime?: string; endTime?: string; metadata?: Record<string, string>;
-        attendees?: { email?: string; phoneNumber?: string }[];
+        attendees?: { email?: string; phoneNumber?: string; name?: string }[];
         responses?: Record<string, { value?: unknown }>;
       };
     };
@@ -84,7 +84,7 @@ export class CalcomCalendar implements CalendarProvider {
     return {
       type, bookingId: b.uid, start: b.startTime ?? null, end: b.endTime ?? null,
       attendeeEmail: b.attendees?.[0]?.email ?? asString(b.responses?.email?.value),
-      attendeePhone: phone, leadId: b.metadata?.lead_id ?? null, eventId: `${p.triggerEvent}:${b.uid}:${b.startTime ?? ""}`,
+      attendeePhone: phone, attendeeName: b.attendees?.[0]?.name ?? asString(b.responses?.name?.value), leadId: b.metadata?.lead_id ?? null, eventId: `${p.triggerEvent}:${b.uid}:${b.startTime ?? ""}`,
     };
   }
 }

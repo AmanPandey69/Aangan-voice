@@ -20,6 +20,7 @@ export interface CalendarWebhookEvent {
   end: string | null;
   attendeeEmail: string | null;
   attendeePhone: string | null;
+  attendeeName: string | null;
   leadId: string | null;
   eventId: string;
 }

@@ -27,8 +27,12 @@ export async function POST(req: Request) {
     const phone = normalisePhone(ev.attendeePhone);
     if (!lead && phone) lead = await s.repo.findLeadByPhone(phone);
     if (!lead && ev.attendeeEmail) {
+      // Email alone is weak (people reuse emails, and the booking arrives before the call is saved):
+      // only link when the name agrees too. Otherwise the call that made it claims it when processed.
       const email = ev.attendeeEmail.toLowerCase();
-      lead = (await s.repo.listLeads({ search: email, limit: 5 })).find((l) => l.email?.toLowerCase() === email) ?? null;
+      const first = (n: string | null | undefined) => (n ?? "").trim().split(/\s+/)[0]?.toLowerCase() ?? "";
+      lead = (await s.repo.listLeads({ search: email, limit: 20 }))
+        .find((l) => l.email?.toLowerCase() === email && !!ev.attendeeName && first(l.name) === first(ev.attendeeName)) ?? null;
     }
 
     if (ev.type === "booking_created" || ev.type === "booking_rescheduled") {

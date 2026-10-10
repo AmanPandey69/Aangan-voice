@@ -355,3 +355,20 @@ describe("late booking", () => {
     expect(lead.review_reasons).not.toContain("needs_manual_booking");
   });
 });
+
+describe("booking matched by email", () => {
+  it("does not attach to a different caller who used the same email", async () => {
+    const s = freshServices();
+    const fx = fixtures.T01;
+    MockLLM.register(fx.calls[0].call_id, { ...fx.facts, email: "same@x.com", name: "Himesh" });
+    await processCall(s, s.voice.parseWebhook(webhookPayload(fx, fx.calls[0]))!, null);
+    // A different caller (Bart) books during his call, same email.
+    await calcomWebhook(signed("http://x", { triggerEvent: "BOOKING_CREATED", payload: { uid: "bk-bart", startTime: "2026-10-12T03:30:00Z", attendees: [{ email: "same@x.com", name: "Bart" }] } }));
+    expect((await s.repo.findLeadByPhone(fx.caller_phone))!.booking_status).not.toBe("booked");
+    // Bart's call is processed afterwards and claims the booking.
+    MockLLM.register("web-bart", { ...fixtures.T20.facts, email: "same@x.com", name: "Bart", phone: null });
+    await processCall(s, s.voice.parseWebhook({ event_id: "e-bart", event: "call.ended", call: { providerCallId: "web-bart", callerPhone: null, startedAt: new Date().toISOString(), durationSec: 200, status: "completed", turns: fixtures.T20.calls[0].turns } })!, null);
+    const bart = (await s.repo.listLeads()).find((l) => l.name === "Bart")!;
+    expect(bart.booking_status).toBe("booked");
+  });
+});
