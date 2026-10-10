@@ -144,6 +144,10 @@ export class NeonRepo implements Repo {
       `insert into bookings (${keys.join(", ")}) values (${ph.join(", ")}) on conflict (provider_booking_id) do update set ${set} returning *`, values);
   }
   async listBookingsForLead(leadId: string) { return this.q<BookingRow>(`select * from bookings where lead_id = $1`, [leadId]); }
+  async listBookings(from: string, to: string) {
+    return this.q<BookingRow>(
+      `select * from bookings where status <> 'cancelled' and start_at >= $1 and start_at < $2 order by start_at`, [from, to]);
+  }
   async findUnlinkedBookings(phone: string | null, email: string | null) {
     if (!phone && !email) return [];
     return this.q<BookingRow>(

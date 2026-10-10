@@ -12,6 +12,14 @@
 const pexels = (id: number, w = 2400) =>
   `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=${w}&dpr=1`;
 
+/** Interior photos used as covers for enquiry cards (Pexels License). */
+const ROOMS = [7587820, 20390760, 7851904, 28991200, 10168692, 15580493];
+export function roomPhoto(seed: string, w = 800): string {
+  let h = 0;
+  for (const ch of seed) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return pexels(ROOMS[h % ROOMS.length], w);
+}
+
 export const MEDIA = {
   loginVideo: "https://assets.mixkit.co/videos/4196/4196-720.mp4",
   loginPoster: "https://assets.mixkit.co/videos/4196/4196-thumb-720-0.jpg",

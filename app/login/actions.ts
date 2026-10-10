@@ -12,6 +12,6 @@ export async function login(_: { error?: string } | undefined, form: FormData): 
   (await cookies()).set(SESSION_COOKIE, createSession(), {
     httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: SESSION_TTL_SECONDS,
   });
-  const next = String(form.get("next") ?? "/calls");
-  redirect(next.startsWith("/") && !next.startsWith("//") ? next : "/calls");
+  const next = String(form.get("next") ?? "/today");
+  redirect(next.startsWith("/") && !next.startsWith("//") ? next : "/today");
 }

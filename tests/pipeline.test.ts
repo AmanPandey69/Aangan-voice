@@ -341,3 +341,17 @@ describe("smoke-test numbers", () => {
     expect(MockCRM.synced).toHaveLength(0);
   });
 });
+
+describe("late booking", () => {
+  it("booking after the call was processed clears 'needs manual booking'", async () => {
+    const s = freshServices();
+    const fx = fixtures.T01;
+    MockLLM.register(fx.calls[0].call_id, fx.facts);
+    await processCall(s, s.voice.parseWebhook(webhookPayload(fx, fx.calls[0]))!, null);
+    expect((await s.repo.findLeadByPhone(fx.caller_phone))!.review_reasons).toContain("needs_manual_booking");
+    await bookSlot(tool("http://x", { caller_phone: fx.caller_phone, args: { slot_start: "2026-09-04T11:00:00+05:30", name: "Priya" } }));
+    const lead = (await s.repo.findLeadByPhone(fx.caller_phone))!;
+    expect(lead.booking_status).toBe("booked");
+    expect(lead.review_reasons).not.toContain("needs_manual_booking");
+  });
+});

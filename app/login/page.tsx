@@ -17,7 +17,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <div className="brand"><span className="brand-mark">A</span> Aangan Studio</div>
         <h1>Enquiry studio</h1>
         <p>Every call, verdict and consultation in one place.</p>
-        {configured ? <LoginForm next={next ?? "/calls"} /> : (
+        {configured ? <LoginForm next={next ?? "/today"} /> : (
           <p>DASHBOARD_PASSWORD is not set. Set it in the environment to enable sign-in.</p>
         )}
       </div>

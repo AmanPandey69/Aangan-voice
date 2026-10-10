@@ -114,3 +114,15 @@ describe("NeonRepo on real Postgres", () => {
     expect(MockNotifier.outbox.length).toBe(2);
   });
 });
+
+describe("NeonRepo.listBookings", () => {
+  it("returns non-cancelled bookings in range, soonest first", async () => {
+    const mk = (id: string, start: string, status = "accepted") => repo.upsertBooking({ lead_id: null, provider: "calcom", provider_booking_id: id, start_at: start, end_at: null, status, attendee_email: null, attendee_phone: null });
+    await mk("cal-b", "2027-01-12T05:30:00Z");
+    await mk("cal-a", "2027-01-05T05:30:00Z");
+    await mk("cal-x", "2027-01-08T05:30:00Z", "cancelled");
+    await mk("cal-out", "2027-02-02T05:30:00Z");
+    const r = await repo.listBookings("2027-01-01T00:00:00Z", "2027-02-01T00:00:00Z");
+    expect(r.map((b) => b.provider_booking_id)).toEqual(["cal-a", "cal-b"]);
+  });
+});

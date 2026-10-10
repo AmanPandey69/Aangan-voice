@@ -25,6 +25,8 @@ export function CommandPalette({ items }: { items: PaletteItem[] }) {
   useEffect(() => { if (open) { setQ(""); setSel(0); inputRef.current?.focus(); } }, [open]);
 
   const pages = [
+    { href: "/today", label: "Today", sub: "Your day at a glance" },
+    { href: "/calendar", label: "Calendar", sub: "Booked consultations" },
     { href: "/calls", label: "Enquiries", sub: "All calls" },
     { href: "/review", label: "Review queue", sub: "Things that need a person" },
     { href: "/costs", label: "Costs & performance", sub: "Spend, answer rate, conversions" },

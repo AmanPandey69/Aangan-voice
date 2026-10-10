@@ -40,6 +40,7 @@ export async function POST(req: Request) {
         start_at: b.start, end_at: b.end, status: "accepted", attendee_email: a.data.email || null, attendee_phone: phone });
       await s.repo.updateLead(lead.id, {
         booking_status: "booked", booked_slot: b.start, name: lead.name ?? a.data.name,
+        review_reasons: lead.review_reasons.filter((r) => r !== "needs_manual_booking"),
         email: lead.email ?? (a.data.email || null), locality: lead.locality ?? a.data.locality ?? null,
       });
       if (lead.verdict) await s.repo.enqueueJob("notify", { leadId: lead.id });

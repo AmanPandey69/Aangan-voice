@@ -31,12 +31,10 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
         image={MEDIA.heroEnquiries}
         eyebrow="Aangan Studio · Pune"
         title="Enquiries"
-        subtitle="Every call the assistant answered, with its verdict, booking and follow-up."
+        subtitle="Everyone who called. Tap a name to see what they want and what to do next."
         stats={[
           { label: "enquiries", value: leads.length },
-          { label: "qualified", value: count((l) => l.verdict === "qualified") },
           { label: "booked", value: count((l) => l.booking_status === "booked") },
-          { label: "to review", value: count((l) => l.review_reasons.length > 0 && !l.review_resolved_at) },
         ]}
       >
         <div className="toolbar-row" style={{ marginTop: 14 }}>
