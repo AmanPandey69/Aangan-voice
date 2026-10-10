@@ -17,6 +17,18 @@ const dayLabel = (iso: string) => {
   const d = istDay(new Date(iso)), today = istDay(new Date()), tomorrow = istDay(new Date(Date.now() + 864e5));
   return d === today ? "Today" : d === tomorrow ? "Tomorrow" : new Date(iso).toLocaleDateString("en-IN", { timeZone: TZ, weekday: "short", day: "numeric", month: "short" });
 };
+const whenPhrase = (iso: string) => {
+  const d = dayLabel(iso);
+  return `${d === "Today" || d === "Tomorrow" ? d.toLowerCase() : `on ${d}`} at ${time(iso)}`;
+};
+const ICON = {
+  phone: <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" />,
+  check: <path d="m5 12 4.5 4.5L19 7" />,
+  cal: <><rect x="4" y="5" width="16" height="15" rx="2.5" /><path d="M8 3v4M16 3v4M4 10h16" /></>,
+};
+const Ico = ({ d }: { d: keyof typeof ICON }) => (
+  <span className="ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{ICON[d]}</svg></span>
+);
 const ago = (iso: string) => {
   const m = Math.round((Date.now() - Date.parse(iso)) / 60000);
   return m < 1 ? "just now" : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`;
@@ -70,12 +82,12 @@ export default async function TodayPage() {
           <div className="pill-eyebrow"><i />Call desk · {now.toLocaleDateString("en-IN", { timeZone: TZ, month: "long", year: "numeric" })}</div>
           <h1>{greeting()},<br /><em>designer.</em></h1>
           <p>{next
-            ? <>Your next consultation is with <b>{nextLead?.name ?? "a client"}</b> {dayLabel(next.start_at).toLowerCase() === "today" ? "today" : `on ${dayLabel(next.start_at)}`}, {time(next.start_at)}.</>
+            ? <>Your next consultation is with <b>{nextLead?.name ?? "a client"}</b> {whenPhrase(next.start_at)}.</>
             : "No consultations booked yet. New bookings appear here the moment a caller books."}</p>
           <div className="funnel">
-            <div className="funnel-step"><span className="ico" aria-hidden="true">☏</span><b><CountUp value={g.calls} /></b><small>Answered</small></div>
-            <div className="funnel-step"><span className="ico" aria-hidden="true">✓</span><b><CountUp value={g.qualified} /></b><small>Qualified</small></div>
-            <div className="funnel-step"><span className="ico" aria-hidden="true">▦</span><b><CountUp value={g.booked} /></b><small>Booked</small></div>
+            <div className="funnel-step"><Ico d="phone" /><b><CountUp value={g.calls} /></b><small>Answered</small></div>
+            <div className="funnel-step"><Ico d="check" /><b><CountUp value={g.qualified} /></b><small>Qualified</small></div>
+            <div className="funnel-step"><Ico d="cal" /><b><CountUp value={g.booked} /></b><small>Booked</small></div>
           </div>
           <p className="funnel-note">Last 30 days</p>
           <div className="actions">
