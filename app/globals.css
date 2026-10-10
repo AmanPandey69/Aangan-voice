@@ -556,3 +556,6 @@ a.row:hover .thumb { transform: scale(1.05); }
   .last-call { min-width: 0; max-width: 88%; }
 }
 @media (prefers-reduced-motion: reduce) { .float-card, .pill-eyebrow i { animation: none; } }
+.call-card .logo { color: #fff; }
+.call-card .logo .arch { fill: rgba(255,255,255,.14); }
+.call-card .logo .wv { fill: #fff; }
