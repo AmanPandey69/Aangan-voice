@@ -12,6 +12,44 @@ export function CallWidget() {
   const [seconds, setSeconds] = useState(0);
   const roomRef = useRef<Room | null>(null);
   const audioRef = useRef<HTMLDivElement>(null);
+  const orbRef = useRef<HTMLDivElement>(null);
+  const waveRef = useRef<HTMLDivElement>(null);
+  const meter = useRef<{ ctx?: AudioContext; analysers: AnalyserNode[]; raf?: number }>({ analysers: [] });
+
+  /** Feed a track into the level meter that drives the orb and the wave bars. */
+  function listen(track: MediaStreamTrack) {
+    const m = meter.current;
+    m.ctx ??= new AudioContext();
+    const an = m.ctx.createAnalyser();
+    an.fftSize = 256;
+    m.ctx.createMediaStreamSource(new MediaStream([track])).connect(an);
+    m.analysers.push(an);
+    if (m.raf) return;
+    const buf = new Uint8Array(128);
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const tick = () => {
+      let lvl = 0;
+      const bands = new Array(12).fill(0);
+      for (const a of m.analysers) {
+        a.getByteFrequencyData(buf);
+        let sum = 0;
+        for (let i = 0; i < buf.length; i++) { sum += buf[i]; bands[Math.floor((i / buf.length) * 12)] += buf[i]; }
+        lvl = Math.max(lvl, sum / buf.length / 255);
+      }
+      const level = reduce ? 0 : Math.min(1, lvl * 2.2);
+      orbRef.current?.style.setProperty("--lvl", level.toFixed(3));
+      waveRef.current?.querySelectorAll("i").forEach((el, i) =>
+        (el as HTMLElement).style.setProperty("--h", reduce ? "0.15" : Math.min(1, bands[i] / (m.analysers.length * 11 * 255) * 2.4).toFixed(3)));
+      m.raf = requestAnimationFrame(tick);
+    };
+    m.raf = requestAnimationFrame(tick);
+  }
+  function stopMeter() {
+    const m = meter.current;
+    if (m.raf) cancelAnimationFrame(m.raf);
+    void m.ctx?.close();
+    meter.current = { analysers: [] };
+  }
 
   useEffect(() => {
     if (state !== "live") return;
@@ -19,7 +57,7 @@ export function CallWidget() {
     return () => clearInterval(t);
   }, [state]);
 
-  useEffect(() => () => { void roomRef.current?.disconnect(); }, []);
+  useEffect(() => () => { void roomRef.current?.disconnect(); stopMeter(); }, []);
 
   async function start() {
     setState("connecting"); setMessage(null); setSeconds(0);
@@ -35,16 +73,17 @@ export function CallWidget() {
       const room = new Room({ adaptiveStream: true, dynacast: true });
       roomRef.current = room;
       room.on(RoomEvent.TrackSubscribed, (track: RemoteTrack) => {
-        if (track.kind === Track.Kind.Audio) audioRef.current?.appendChild(track.attach());
+        if (track.kind === Track.Kind.Audio) { audioRef.current?.appendChild(track.attach()); listen(track.mediaStreamTrack); }
       });
       room.on(RoomEvent.ActiveSpeakersChanged, (speakers) => {
         setAgentSpeaking(speakers.some((p) => p.identity !== room.localParticipant.identity));
       });
-      room.on(RoomEvent.Disconnected, () => { setState("ended"); setAgentSpeaking(false); });
+      room.on(RoomEvent.Disconnected, () => { setState("ended"); setAgentSpeaking(false); stopMeter(); });
 
       await room.connect(data.connectionUrl, data.token);
       await room.startAudio();
-      await room.localParticipant.setMicrophoneEnabled(true);
+      const mic = await room.localParticipant.setMicrophoneEnabled(true);
+      if (mic?.track?.mediaStreamTrack) listen(mic.track.mediaStreamTrack);
       setState("live");
     } catch (err) {
       const e = err as Error & { name?: string };
@@ -54,7 +93,7 @@ export function CallWidget() {
     }
   }
 
-  async function hangUp() { await roomRef.current?.disconnect(); setState("ended"); }
+  async function hangUp() { await roomRef.current?.disconnect(); stopMeter(); setState("ended"); }
   async function toggleMute() {
     const room = roomRef.current; if (!room) return;
     await room.localParticipant.setMicrophoneEnabled(muted);
@@ -68,7 +107,8 @@ export function CallWidget() {
       <div ref={audioRef} hidden />
       {state === "live" ? (
         <>
-          <div className={`call-orb${agentSpeaking ? " speaking" : ""}`} aria-hidden="true" />
+          <div ref={orbRef} className={`call-orb${agentSpeaking ? " speaking" : ""}`} aria-hidden="true" />
+          <div ref={waveRef} className="wave" aria-hidden="true">{Array.from({ length: 12 }, (_, i) => <i key={i} />)}</div>
           <p className="call-status" aria-live="polite">{agentSpeaking ? "Assistant is speaking…" : "Listening…"} · {mmss}</p>
           <div className="call-actions">
             <button type="button" className="btn-secondary call-mute" onClick={toggleMute}>{muted ? "Unmute" : "Mute"}</button>

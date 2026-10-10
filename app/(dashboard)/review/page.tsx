@@ -35,11 +35,11 @@ export default async function ReviewPage() {
         subtitle="Escalations, manual bookings, unacknowledged handoffs and anything the rules weren't sure about."
         stats={[{ label: "open", value: leads.length }, { label: "failed jobs", value: dead.length }]}
       />
-      {GROUPS.map(({ reason, title, hint }) => {
+      {GROUPS.map(({ reason, title, hint }, gi) => {
         const rows = by(reason);
         if (!rows.length) return null;
         return (
-          <section className="card" key={reason}>
+          <section className="card glow rise" style={{ ["--i" as string]: gi + 2 }} key={reason}>
             <h2>{title} <span className="count">{rows.length}</span></h2>
             <p className="small muted">{hint}</p>
             <ReviewTable rows={rows} />

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { LeadRow } from "@/lib/db/types";
+import { CountUp } from "@/app/fx/count-up";
 
 export function VerdictBadge({ verdict, urgent }: { verdict: LeadRow["verdict"]; urgent?: boolean }) {
   const v = verdict ?? "pending";
@@ -22,7 +23,7 @@ export function Hero({ image, eyebrow, title, subtitle, stats, compact, children
   stats?: { label: string; value: ReactNode }[]; compact?: boolean; children?: ReactNode;
 }) {
   return (
-    <section className={`hero${compact ? " compact" : ""}${image ? "" : " plain"}`} style={image ? { backgroundImage: `url("${image}")` } : undefined}>
+    <section className={`hero rise${compact ? " compact" : ""}${image ? "" : " plain"}`} style={image ? { backgroundImage: `url("${image}")` } : undefined}>
       <div className="hero-inner">
         <div>
           {eyebrow && <div className="hero-eyebrow">{eyebrow}</div>}
@@ -32,7 +33,11 @@ export function Hero({ image, eyebrow, title, subtitle, stats, compact, children
         </div>
         {stats && stats.length > 0 && (
           <div className="hero-stats">
-            {stats.map((st) => <div className="hero-stat" key={st.label}><b>{st.value}</b><span>{st.label}</span></div>)}
+            {stats.map((st, i) => (
+              <div className="hero-stat rise" style={{ ["--i" as string]: i + 2 }} key={st.label}>
+                <b>{typeof st.value === "number" || typeof st.value === "string" ? <CountUp value={st.value} /> : st.value}</b><span>{st.label}</span>
+              </div>
+            ))}
           </div>
         )}
       </div>
