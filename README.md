@@ -158,3 +158,7 @@ To check real email delivery, add `--with-email` (or `npm run smoke:email`): the
 - **Vaani:** custom functions are not publicly documented. Booking uses Vaani's Cal.com integration, and the live verdict comes from the `qualification` disposition. It's also unconfirmed whether dashboard webhooks are signed like campaign webhooks (the URL-token fallback covers this). The timezone of call-history timestamps and per-credit pricing (`VAANI_USD_PER_CREDIT`) are unconfirmed, as is Marathi support.
 - **Cal.com:** the webhook signature encoding isn't stated in the docs. The app uses hex HMAC over the raw body; send a test delivery after setup to confirm.
 - **HubSpot:** confirmed for the studio's portal (default pipeline stages and `closed_lost_reason`). Re-check if the pipeline is customised.
+
+## Customer call site
+
+Customers talk to the agent at **https://aangan-call.vercel.app** (same Vercel project, its own address). That address only serves the call page; `/call` on the dashboard address redirects there. Embed: `<iframe src="https://aangan-call.vercel.app/?embed=1" allow="microphone" width="100%" height="520" style="border:0"></iframe>`. Extra customer addresses can be listed in `CUSTOMER_HOSTS`.
