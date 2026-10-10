@@ -45,10 +45,6 @@ const NEED_TEXT: Partial<Record<ReviewReason, [string, string]>> = {
 };
 const PRIORITY: ReviewReason[] = ["escalation", "needs_manual_booking", "unacknowledged_handoff", "budget_review", "price_leak", "extraction_failed", "verdict_mismatch"];
 
-function greeting() {
-  const h = Number(new Date().toLocaleString("en-IN", { timeZone: TZ, hour: "numeric", hour12: false }));
-  return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
-}
 
 export default async function TodayPage() {
   const s = services();
@@ -80,7 +76,7 @@ export default async function TodayPage() {
       <section className="home">
         <div className="home-text rise">
           <div className="pill-eyebrow"><i />Call desk · {now.toLocaleDateString("en-IN", { timeZone: TZ, month: "long", year: "numeric" })}</div>
-          <h1>{greeting()},<br /><em>designer.</em></h1>
+          <h1>Hello, <em>designer.</em></h1>
           <p>{next
             ? <>Your next consultation is with <b>{nextLead?.name ?? "a client"}</b> {whenPhrase(next.start_at)}.</>
             : "No consultations booked yet. New bookings appear here the moment a caller books."}</p>
