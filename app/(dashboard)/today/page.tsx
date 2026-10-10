@@ -52,7 +52,10 @@ export default async function TodayPage() {
   const p = pulse(calls, leads, notifications, now);
   const next = bookings.find((b) => Date.parse(b.start_at) > now.getTime() - 3600e3);
   const nextLead = next?.lead_id ? byId.get(next.lead_id) : undefined;
-  const recentCalls = [...calls].filter((c) => c.status !== "in_progress").sort((a, b) => Date.parse(b.started_at ?? b.created_at) - Date.parse(a.started_at ?? a.created_at)).slice(0, 4);
+  // Call log: real conversations first (a lead with a verdict), not hang-ups or tests.
+  const sorted = [...calls].filter((c) => c.status !== "in_progress").sort((a, b) => Date.parse(b.started_at ?? b.created_at) - Date.parse(a.started_at ?? a.created_at));
+  const real = sorted.filter((c) => c.lead_id && byId.get(c.lead_id)?.verdict && c.duration_sec >= 30);
+  const recentCalls = (real.length >= 4 ? real : [...real, ...sorted.filter((c) => !real.includes(c))]).slice(0, 4);
 
   // One "to do" list: open review items first, then good leads with no consultation.
   const todo = [
@@ -129,12 +132,12 @@ export default async function TodayPage() {
 const fmtDur = (sec: number) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
 const until = (iso: string) => {
   const m = Math.round((Date.parse(iso) - Date.now()) / 60000);
-  return m <= 0 ? "now" : m < 60 ? `in ${m} min` : m < 1440 ? `in ${Math.round(m / 60)} h` : `in ${Math.round(m / 1440)} days`;
+  return m <= 0 ? "now" : m < 60 ? `in ${m} min` : m < 1440 ? `in ${Math.round(m / 60)} h` : `in ${Math.round(m / 1440)} day${Math.round(m / 1440) === 1 ? "" : "s"}`;
 };
 /** A stable, call-specific waveform (decorative). */
-function waveform(id: string, n = 28) {
+function waveform(id: string, n = 44) {
   let h = 7;
-  return Array.from({ length: n }, (_, i) => { for (const ch of id + i) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return 0.2 + ((h % 1000) / 1000) * 0.8; });
+  return Array.from({ length: n }, (_, i) => { for (const ch of id + i) h = (h * 31 + ch.charCodeAt(0)) >>> 0; const env = Math.sin((Math.PI * (i + 1)) / (n + 1)); return 0.15 + env * (0.25 + ((h % 1000) / 1000) * 0.6); });
 }
 
 /** The last few calls as a log, each with its own waveform; the newest one moves. */

@@ -524,8 +524,8 @@ audio.player { width: 100%; margin: 6px 0 18px; }
 .log-top { display: flex; align-items: center; gap: 10px; }
 .log-top b { font-weight: 500; }
 .log-top small { margin-left: auto; font-size: 12px; color: var(--muted); }
-.log-wave { display: flex; align-items: center; gap: 3px; height: 26px; }
-.log-wave i { flex: 1; height: calc(var(--v) * 100%); border-radius: 2px; background: var(--line-strong); transition: background .2s; }
+.log-wave { display: flex; align-items: center; justify-content: space-between; height: 26px; }
+.log-wave i { flex: none; width: 3px; height: calc(var(--v) * 100%); border-radius: 2px; background: var(--line-strong); transition: background .2s; }
 .log-row.latest .log-wave i { background: var(--brand); animation: logwave 1.6s ease-in-out infinite; transform-origin: 50% 50%; }
 @keyframes logwave { 50% { transform: scaleY(.45); } }
 .log-meta { display: flex; justify-content: space-between; font: 500 11px/1 var(--font-mono); letter-spacing: .06em; color: var(--muted); text-transform: uppercase; }
