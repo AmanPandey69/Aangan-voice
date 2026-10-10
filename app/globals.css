@@ -96,7 +96,7 @@ input:focus-visible, select:focus-visible { outline: none; border-color: var(--b
 .act.wa { color: var(--good); }
 .on-photo .act { background: rgba(255,255,255,.14); color: #fff; border-color: rgba(255,255,255,.35); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 .on-photo .act:hover { background: rgba(255,255,255,.24); border-color: #fff; }
-.on-photo .act.primary { background: #fff; color: var(--ink); border-color: #fff; }
+.on-photo .act.primary { background: #fff; color: #141414; border-color: #fff; }
 
 /* ---------- shell & navigation ---------- */
 .shell { min-height: 100vh; }
