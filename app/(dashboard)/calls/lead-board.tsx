@@ -1,10 +1,12 @@
 "use client";
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { ScoreRing } from "@/app/ui";
 
 export interface BoardLead {
   id: string; name: string; phone: string; locality: string; property: string; verdict: string | null;
   urgent: boolean; booking: string; flags: string[]; reviews: string[]; when: string;
+  score: number | null; followUp: boolean; photo: string;
 }
 
 const VERDICTS = [
@@ -17,17 +19,19 @@ const VERDICTS = [
 
 const human = (s: string) => s.replace(/_/g, " ");
 
-export function LeadBoard({ leads }: { leads: BoardLead[] }) {
+export function LeadBoard({ leads, initialFollowUp = false }: { leads: BoardLead[]; initialFollowUp?: boolean }) {
   const [q, setQ] = useState("");
   const [verdict, setVerdict] = useState<string>("all");
   const [onlyReview, setOnlyReview] = useState(false);
+  const [onlyFollowUp, setOnlyFollowUp] = useState(initialFollowUp);
   const [view, setView] = useState<"list" | "board">("list");
 
   const base = useMemo(() => {
     const s = q.trim().toLowerCase();
     return leads.filter((l) => !s || [l.name, l.phone, l.locality, l.property].some((v) => v.toLowerCase().includes(s)))
-      .filter((l) => !onlyReview || l.reviews.length > 0);
-  }, [leads, q, onlyReview]);
+      .filter((l) => !onlyReview || l.reviews.length > 0)
+      .filter((l) => !onlyFollowUp || l.followUp);
+  }, [leads, q, onlyReview, onlyFollowUp]);
   const shown = verdict === "all" ? base : base.filter((l) => (l.verdict ?? "pending") === verdict);
   const count = (k: string) => (k === "all" ? base.length : base.filter((l) => (l.verdict ?? "pending") === k).length);
 
@@ -48,6 +52,7 @@ export function LeadBoard({ leads }: { leads: BoardLead[] }) {
             </button>
           ))}
           <button type="button" className={`chip${onlyReview ? " on" : ""}`} onClick={() => setOnlyReview(!onlyReview)}>⚑ Needs review</button>
+          <button type="button" className={`chip${onlyFollowUp ? " on" : ""}`} onClick={() => setOnlyFollowUp(!onlyFollowUp)} title="Good leads without a consultation yet">↻ Follow up <b>{leads.filter((l) => l.followUp).length}</b></button>
         </div>
       )}
 
@@ -62,6 +67,7 @@ export function LeadBoard({ leads }: { leads: BoardLead[] }) {
               <div className="hide-sm"><div>{l.locality || "Area not stated"}</div><div className="sub">{l.property || "—"}</div></div>
               <div className="hide-sm"><span className={`pill pill-${l.booking}`}>{human(l.booking)}</span></div>
               <div className="end">
+                <ScoreRing score={l.score} />
                 {l.reviews.length > 0 && <span className="flag-ico" title={l.reviews.map(human).join(", ")}>⚑ {l.reviews.length}</span>}
                 <span className={`badge badge-${l.verdict ?? "pending"}`}>{l.verdict ?? "pending"}{l.urgent ? " · urgent" : ""}</span>
               </div>
@@ -79,6 +85,7 @@ export function LeadBoard({ leads }: { leads: BoardLead[] }) {
                 <div className="lane-cards">
                   {cards.map((l) => (
                     <Link key={l.id} href={`/calls/${l.id}`} className="lead-card glow tilt">
+                      <div className="cover" style={{ backgroundImage: `url("${l.photo}")` }} aria-hidden="true"><ScoreRing score={l.score} size={34} /></div>
                       <div className="who"><span className="avatar">{l.name.slice(0, 1).toUpperCase()}</span>
                         <div><b>{l.name}</b><div className="muted small">{l.locality || "Area not stated"}</div></div></div>
                       <div className="meta">

@@ -430,3 +430,45 @@ audio.player { width: 100%; margin: 6px 0 18px; }
   html.fx .reveal { opacity: 1; transform: none; }
   .hero-media, .vhero video, .vhero img { transform: none; }
 }
+
+/* ── Fit score ring ─────────────────────────────────────────── */
+.score-ring { position: relative; display: inline-grid; place-items: center; flex: none; }
+.score-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.score-ring circle { fill: none; stroke-width: 3; }
+.score-ring .track { stroke: var(--line); }
+.score-ring .bar { stroke: var(--brand); stroke-linecap: round; transition: stroke-dashoffset .9s var(--ease); }
+.score-ring b { position: relative; font: 500 11px/1 var(--font-mono); color: var(--ink); }
+.score-ring.empty { border: 1px dashed var(--line-strong); border-radius: 50%; font: 500 11px/1 var(--font-mono); color: var(--muted); }
+.hero .score-ring .track { stroke: rgba(255,255,255,.3); }
+.hero .score-ring .bar { stroke: #fff; }
+.hero .score-ring b { color: #fff; font-size: 18px; }
+.agenda-time .score-ring { margin-bottom: 6px; }
+
+/* ── Agenda / follow-up photo thumbs ────────────────────────── */
+.agenda-who { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.agenda-who .thumb { width: 64px; height: 64px; flex: none; border-radius: 14px; background: var(--sunk) center / cover; transition: transform .4s var(--ease); }
+.agenda-item:hover .agenda-who .thumb { transform: scale(1.04); }
+@media (max-width: 760px) { .agenda-who .thumb { width: 48px; height: 48px; border-radius: 12px; } }
+
+/* ── Last 30 days at a glance ───────────────────────────────── */
+.glance { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 16px; }
+.glance-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 22px; min-width: 0; }
+.glance-card p { margin: 8px 0 0; font-size: 13.5px; color: var(--muted); }
+.glance-card.alert { border-color: color-mix(in srgb, #e76f51 45%, var(--line)); }
+.glance-big { font: 400 44px/1.05 var(--font-serif); margin-top: 8px; }
+.glance-big small { font: 400 14px/1 var(--font-sans); color: var(--muted); }
+.bars { display: flex; align-items: flex-end; gap: 3px; height: 84px; margin-top: 16px; }
+.bars i { flex: 1; min-height: 2px; height: calc(var(--h) * 100%); background: var(--brand); opacity: calc(.25 + var(--h) * .75); border-radius: 3px 3px 1px 1px; transition: opacity .2s; }
+.bars i:hover { opacity: 1; }
+.bars-axis { display: flex; justify-content: space-between; margin-top: 6px; font: 500 10.5px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+@media (max-width: 1000px) { .glance { grid-template-columns: 1fr 1fr; } .glance-card.wide { grid-column: 1 / -1; } }
+@media (max-width: 560px) { .glance { grid-template-columns: 1fr; } }
+
+/* ── Board card covers ──────────────────────────────────────── */
+.lead-card .cover { position: relative; height: 96px; margin: -16px -16px 14px; border-radius: var(--radius) var(--radius) 0 0; background: var(--sunk) center / cover; }
+.lead-card .cover .score-ring { position: absolute; right: 10px; bottom: 10px; background: rgba(255,255,255,.92); border-radius: 50%; }
+.lead-card .cover .score-ring b { color: #141414; }
+
+/* ── Login feature tags ─────────────────────────────────────── */
+.login-tags { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0 0 22px; }
+.login-tags li { font: 500 11px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); padding: 8px 11px; border: 1px solid var(--line); border-radius: 999px; }

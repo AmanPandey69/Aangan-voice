@@ -19,6 +19,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <div className="brand"><span className="wordmark">Aangan</span><span className="wordmark-sub">Studio</span></div>
           <h1>Welcome back.</h1>
           <p>Sign in to see today&apos;s consultations and enquiries.</p>
+          <ul className="login-tags" aria-label="What the assistant does">
+            <li>Answers 24×7</li><li>Books on the call</li><li>Brief in your inbox</li>
+          </ul>
           {configured ? <LoginForm next={next ?? "/today"} /> : <p>DASHBOARD_PASSWORD is not set. Set it in the environment to enable sign-in.</p>}
           <div className="login-foot">Video: <a href="https://mixkit.co/" target="_blank" rel="noreferrer">Mixkit</a></div>
         </div>

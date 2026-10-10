@@ -50,3 +50,18 @@ export function Hero({ image, video, eyebrow, title, subtitle, stats, compact, c
     </section>
   );
 }
+
+/** Small ring showing the 0–100 fit score. */
+export function ScoreRing({ score, size = 36 }: { score: number | null; size?: number }) {
+  if (score == null) return <span className="score-ring empty" style={{ width: size, height: size }} title="No score yet">–</span>;
+  const r = 15, len = 2 * Math.PI * r;
+  return (
+    <span className="score-ring" style={{ width: size, height: size }} title={`Fit ${score} of 100`} aria-label={`Fit ${score} of 100`}>
+      <svg viewBox="0 0 36 36" aria-hidden="true">
+        <circle cx="18" cy="18" r={r} className="track" />
+        <circle cx="18" cy="18" r={r} className="bar" strokeDasharray={len} strokeDashoffset={len * (1 - score / 100)} />
+      </svg>
+      <b>{score}</b>
+    </span>
+  );
+}

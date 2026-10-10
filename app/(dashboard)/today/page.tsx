@@ -5,6 +5,8 @@ import { CountUp } from "@/app/fx/count-up";
 import { propertyLabel } from "@/lib/handoff/email";
 import { telHref, whatsappHref } from "@/lib/handoff/brief";
 import type { LeadRow, ReviewReason } from "@/lib/db/types";
+import { fitScore, glance, needsFollowUp, type Glance } from "@/lib/insights";
+import { ScoreRing } from "@/app/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -35,10 +37,12 @@ function greeting() {
 export default async function TodayPage() {
   const s = services();
   const now = new Date();
-  const [bookings, leads] = await Promise.all([
+  const [bookings, leads, calls] = await Promise.all([
     s.repo.listBookings(new Date(now.getTime() - 2 * 3600e3).toISOString(), new Date(now.getTime() + 7 * 864e5).toISOString()),
     s.repo.listLeads({ limit: 500 }),
+    s.repo.listCalls({ since: new Date(now.getTime() - 31 * 864e5).toISOString(), limit: 2000 }),
   ]);
+  const g = glance(calls, leads, now);
   const byId = new Map(leads.map((l) => [l.id, l]));
   const todayCount = bookings.filter((b) => istDay(new Date(b.start_at)) === istDay(now)).length;
   const weekNew = leads.filter((l) => Date.parse(l.first_seen_at) > now.getTime() - 7 * 864e5).length;
@@ -47,6 +51,8 @@ export default async function TodayPage() {
     .map((l) => ({ l, r: PRIORITY.find((p) => l.review_reasons.includes(p))! }))
     .sort((a, b) => PRIORITY.indexOf(a.r) - PRIORITY.indexOf(b.r));
   const fresh = leads.filter((l) => l.verdict).slice(0, 8);
+  const inNeeds = new Set(needs.map((n) => n.l.id));
+  const followUp = leads.filter((l) => needsFollowUp(l) && !inNeeds.has(l.id));
 
   return (
     <>
@@ -95,6 +101,18 @@ export default async function TodayPage() {
         </div>
       )}
 
+      <div className="section-title reveal"><h2>Follow up</h2><Link href="/calls?show=followup">All <span className="arrow">→</span></Link></div>
+      {followUp.length === 0 ? (
+        <div className="empty-state reveal">Every good lead has a consultation booked.</div>
+      ) : (
+        <div className="agenda">
+          {followUp.slice(0, 4).map((l, i) => <FollowUpItem key={l.id} i={i} lead={l} />)}
+        </div>
+      )}
+
+      <div className="section-title reveal"><h2>Last 30 days</h2><Link href="/costs">Costs <span className="arrow">→</span></Link></div>
+      <AtAGlance g={g} />
+
       <div className="section-title reveal"><h2>Latest enquiries</h2><span className="rail-hint">Drag to browse ⟷</span></div>
       <div className="rail reveal">
         {fresh.map((l) => (
@@ -115,14 +133,75 @@ function AgendaItem({ start, lead, i }: { start: string; lead?: LeadRow; i: numb
   return (
     <div className="agenda-item reveal" style={{ transitionDelay: `${i * 70}ms` }}>
       <div className="agenda-time"><b>{time(start)}</b><span>{dayLabel(start)}</span></div>
-      <div>
-        <h3>{lead?.name ?? "Consultation"}</h3>
-        <p>{lead ? [lead.locality, propertyLabel(lead.facts), lead.facts.carpet_area_sqft ? `${lead.facts.carpet_area_sqft} sq ft` : null].filter(Boolean).join(" · ") : "Booked directly in Cal.com"}</p>
+      <div className="agenda-who">
+        <span className="thumb" style={{ backgroundImage: `url("${roomPhoto(lead?.id ?? start, 240)}")` }} aria-hidden="true" />
+        <div>
+          <h3>{lead?.name ?? "Consultation"}</h3>
+          <p>{lead ? [lead.locality, propertyLabel(lead.facts), lead.facts.carpet_area_sqft ? `${lead.facts.carpet_area_sqft} sq ft` : null].filter(Boolean).join(" · ") : "Booked directly in Cal.com"}</p>
+        </div>
       </div>
       <div className="actions">
         {tel && <a className="act" href={tel}>📞 Call</a>}
         {wa && <a className="act wa" href={wa} target="_blank" rel="noreferrer">💬 WhatsApp</a>}
         {lead && <Link className="act primary" href={`/calls/${lead.id}`}>Prep <span className="arrow">→</span></Link>}
+      </div>
+    </div>
+  );
+}
+
+const pct = (v: number | null) => (v == null ? "–" : `${Math.round(v * 100)}%`);
+
+/** Four quiet numbers: volume, after-hours share, booking rate, and proof that no price was ever quoted. */
+function AtAGlance({ g }: { g: Glance }) {
+  const max = Math.max(1, ...g.perDay.map((d) => d.count));
+  const fmt = (day: string) => new Date(`${day}T12:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+  return (
+    <div className="glance reveal">
+      <div className="glance-card wide">
+        <div className="tile-label">Calls per day</div>
+        <div className="glance-big">{g.calls}<small> calls · {g.people} {g.people === 1 ? "person" : "people"}</small></div>
+        <div className="bars" role="img" aria-label={`Calls per day over the last 30 days, ${g.calls} in total`}>
+          {g.perDay.map((d) => <i key={d.day} style={{ ["--h" as string]: d.count / max }} title={`${fmt(d.day)}: ${d.count}`} />)}
+        </div>
+        <div className="bars-axis"><span>{fmt(g.perDay[0].day)}</span><span>Today</span></div>
+      </div>
+      <div className="glance-card">
+        <div className="tile-label">Booked on the call</div>
+        <div className="glance-big">{pct(g.bookingRate)}</div>
+        <p>{g.qualified ? `${g.booked} of ${g.qualified} qualified callers booked a consultation without a call back.` : "No qualified callers yet."}</p>
+      </div>
+      <div className="glance-card">
+        <div className="tile-label">After studio hours</div>
+        <div className="glance-big">{pct(g.afterHoursRate)}</div>
+        <p>of calls came outside 10am–7pm, Mon–Sat. Answered anyway.</p>
+      </div>
+      <div className={`glance-card${g.priceLeaks ? " alert" : ""}`}>
+        <div className="tile-label">Price questions</div>
+        <div className="glance-big">{g.priceAsked}<small> asked · {g.priceLeaks} quoted</small></div>
+        <p>{g.priceLeaks ? <Link href="/review">Check {g.priceLeaks} call{g.priceLeaks > 1 ? "s" : ""} in the review queue →</Link> : "Every one was steered to the consultation. No number was ever said."}</p>
+      </div>
+    </div>
+  );
+}
+
+function FollowUpItem({ lead, i }: { lead: LeadRow; i: number }) {
+  const tel = telHref(lead), wa = whatsappHref(lead);
+  const why = lead.booking_status === "needs_manual_booking" ? "Wanted a slot, not booked yet"
+    : lead.booking_status === "cancelled" ? "Cancelled their consultation" : lead.verdict === "escalate" ? "Asked for a person" : "Qualified, no consultation yet";
+  return (
+    <div className="agenda-item reveal" style={{ transitionDelay: `${i * 70}ms` }}>
+      <div className="agenda-time"><ScoreRing score={fitScore(lead.criteria)} size={44} /><span>fit</span></div>
+      <div className="agenda-who">
+        <span className="thumb" style={{ backgroundImage: `url("${roomPhoto(lead.id, 240)}")` }} aria-hidden="true" />
+        <div>
+          <h3>{lead.name ?? "Unknown caller"}</h3>
+          <p>{[why, lead.locality, propertyLabel(lead.facts)].filter(Boolean).join(" · ")}</p>
+        </div>
+      </div>
+      <div className="actions">
+        {tel && <a className="act" href={tel}>📞 Call</a>}
+        {wa && <a className="act wa" href={wa} target="_blank" rel="noreferrer">💬 WhatsApp</a>}
+        <Link className="act primary" href={`/calls/${lead.id}`}>Open <span className="arrow">→</span></Link>
       </div>
     </div>
   );

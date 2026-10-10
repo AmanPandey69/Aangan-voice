@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { services } from "@/lib/container";
 import { fmtDate, Hero } from "@/app/ui";
-import { MEDIA } from "@/config/media";
+import { MEDIA, roomPhoto } from "@/config/media";
+import { fitScore, needsFollowUp } from "@/lib/insights";
 import { displayPhone } from "@/lib/phone";
 import { LeadBoard, type BoardLead } from "./lead-board";
 
@@ -23,6 +24,7 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
     property: [l.facts.bhk ? `${l.facts.bhk}BHK` : null, l.facts.property_type?.replace(/_/g, " "), l.facts.carpet_area_sqft ? `${l.facts.carpet_area_sqft} sq ft` : null].filter(Boolean).join(" · "),
     verdict: l.verdict, urgent: l.urgent, booking: l.booking_status, flags: l.flags,
     reviews: l.review_resolved_at ? [] : l.review_reasons, when: fmtDate(l.last_call_at),
+    score: fitScore(l.criteria), followUp: needsFollowUp(l), photo: roomPhoto(l.id, 600),
   }));
 
   return (
@@ -35,6 +37,7 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
         stats={[
           { label: "enquiries", value: leads.length },
           { label: "booked", value: count((l) => l.booking_status === "booked") },
+          { label: "to follow up", value: count(needsFollowUp) },
         ]}
       >
         <div className="toolbar-row" style={{ marginTop: 14 }}>
@@ -43,7 +46,7 @@ export default async function CallsPage({ searchParams }: { searchParams: Promis
           ))}
         </div>
       </Hero>
-      <LeadBoard leads={board} />
+      <LeadBoard leads={board} initialFollowUp={sp.show === "followup"} />
     </>
   );
 }

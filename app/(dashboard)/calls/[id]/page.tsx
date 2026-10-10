@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { services } from "@/lib/container";
 import type { CriterionKey } from "@/lib/domain/lead";
-import { fmtDate, fmtDuration, Hero, StatusPill, VerdictBadge } from "@/app/ui";
+import { fmtDate, fmtDuration, Hero, ScoreRing, StatusPill, VerdictBadge } from "@/app/ui";
+import { fitScore } from "@/lib/insights";
 import { acknowledgeLead, resolveReview } from "./actions";
 import { Tabs, CopyButton } from "./tabs";
 import { env } from "@/lib/env";
@@ -169,7 +170,8 @@ export default async function CallDetail({ params }: { params: Promise<{ id: str
       <p className="rise" style={{ margin: "0 0 12px" }}><Link href="/calls" className="act">← All enquiries</Link></p>
       <Hero compact image={roomPhoto(lead.id, 2000)}
         eyebrow={[lead.locality, f.bhk ? `${f.bhk}BHK` : null, f.property_type?.replace(/_/g, " ")].filter(Boolean).join(" · ") || "Enquiry"}
-        title={lead.name ?? "Unknown caller"} subtitle={f.summary || undefined}>
+        title={lead.name ?? "Unknown caller"} subtitle={f.summary || undefined}
+        stats={fitScore(lead.criteria) == null ? undefined : [{ label: "fit out of 100", value: <ScoreRing score={fitScore(lead.criteria)} size={64} /> }]}>
         <div className="actions on-photo" style={{ marginTop: 16 }}>
           {tel && <a className="act" href={tel}>📞 Call</a>}
           {wa && <a className="act" href={wa} target="_blank" rel="noreferrer">💬 WhatsApp</a>}
