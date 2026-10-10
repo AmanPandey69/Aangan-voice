@@ -1,6 +1,7 @@
 import { LeadFactsSchema, type LeadFacts } from "@/lib/domain/lead";
 import type { ExtractionInput, ExtractionUsage, LLMProvider } from "@/lib/adapters/llm/types";
 import { findPriceLeaks } from "@/lib/guard/price-guard";
+import { hasRealPhone } from "@/lib/phone";
 
 export type ExtractionResult =
   | { ok: true; facts: LeadFacts; attempts: number; usage: ExtractionUsage[] }
@@ -38,7 +39,7 @@ export async function extractLead(llm: LLMProvider, input: ExtractionInput, maxA
 function normalise(f: LeadFacts, input: ExtractionInput): LeadFacts {
   const out = { ...f };
   // Caller ID is more reliable than a number read out on the call.
-  if (!out.phone && input.callerPhone) out.phone = input.callerPhone;
+  if (!out.phone && hasRealPhone(input.callerPhone)) out.phone = input.callerPhone;
   // Free-text the LLM writes must never carry a money figure into storage or email.
   if (findPriceLeaks(out.summary).length) out.summary = "Summary withheld: contained a price-like figure. See transcript.";
   // budget_raw is only kept if the caller volunteered it.

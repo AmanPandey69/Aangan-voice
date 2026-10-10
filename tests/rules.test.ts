@@ -186,3 +186,13 @@ describe("live mode", () => {
   });
   it("escalates immediately", () => expect(run(good({ requested_human: true }), { mode: "live" }).next_action).toBe("escalate"));
 });
+
+describe("misheard localities (speech-to-text)", () => {
+  it.each([["Banir", "baner"], ["Kotrud", "kothrud"], ["Hinjewdi", "hinjewadi"], ["Pimple Saudgar", "pimple saudagar"]])("%s → %s", (said, place) => {
+    const m = matchLocality(said);
+    expect(m.area).toBe("in");
+    expect(m.locality).toBe(place);
+  });
+  it("still declines a misheard out-of-area city", () => expect(matchLocality("Nashk").area).toBe("out"));
+  it("does not stretch short names", () => expect(matchLocality("Undi").area).toBe("unknown"));
+});

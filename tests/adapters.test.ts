@@ -205,3 +205,7 @@ describe("online (browser) calls without a phone number", () => {
     expect((calls.find((c) => c.url.endsWith("/contacts"))!.body as { properties: Record<string, string> }).properties.phone).toBeUndefined();
   });
 });
+
+describe("phone normalisation rejects call ids", () => {
+  it.each(["webrtc-1791541679-3a698fe8", "online:webrtc-1791541679-3a698fe8", "web-user"])("%s → null", (v) => expect(normalisePhone(v)).toBeNull());
+});
